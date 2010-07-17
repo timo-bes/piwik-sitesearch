@@ -1,9 +1,8 @@
 <div id="leftcolumn">
-   <h2>Keywords</h2>
-   
+	<h2>Keywords</h2>
+	{$keywords}
 </div>
 
 <div id="rightcolumn">
-   <h2>Pages</h2>
-   
+	<div id="sitesearch_pages"></div>
 </div>

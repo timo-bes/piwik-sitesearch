@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Site Search Plugin
@@ -21,7 +21,10 @@ $translations = array(
 	'SiteSearch_Website' => 'Website',
 	'SiteSearch_SearchURL' => 'Search URL',
 	'SiteSearch_SearchParameter' => 'Search Parameter',
-	'SiteSearch_Save' => 'Save'
+	'SiteSearch_Save' => 'Save',
+	'SiteSearch_Keyword' => 'Keyword',
+	'SiteSearch_Hits' => 'Hits',
+	'SiteSearch_Page' => 'Page'
 );
 
 ?>

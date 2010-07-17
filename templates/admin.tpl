@@ -18,7 +18,7 @@
 		{foreach from=$sitesList item=site}
 		<tr>
 			<td>{$site.name}</td>
-			<td><input name="SiteSearch_Data[{$site.idsite}][url]" value="{$site.sitesearch_parameter}" style="width: 200px"/></td>
+			<td><input name="SiteSearch_Data[{$site.idsite}][url]" value="{$site.sitesearch_url}" style="width: 200px"/></td>
 			<td><input name="SiteSearch_Data[{$site.idsite}][parameter]" value="{$site.sitesearch_parameter}" style="width: 100px"/></td>
 		</tr>
 		{/foreach}

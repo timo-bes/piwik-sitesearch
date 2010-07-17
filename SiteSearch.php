@@ -22,18 +22,45 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		);
 	}
 	
+	/** Install the plugin */
+	function install() {
+		echo $query = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('site').'` '
+		       . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
+		try {
+			Zend_Registry::get('db')->query($query);
+		} catch (Exception $e) {
+			// if the column already exist do not throw error
+		}
+	}
+	
+	/** Uninstall the plugin */
+	public function uninstall() {
+		$query = 'ALTER TABLE `'.Piwik_Common::prefixTable('site').'` '
+		       . 'DROP `sitesearch_parameter`';
+		
+		Zend_Registry::get('db')->query($query);
+	}
+	
 	/** Register Hooks */
 	public function getListHooksRegistered(){
         $hooks = array(
-			'Menu.add' => 'addMenu'
+			'Menu.add' => 'addMenu',
+			'AdminMenu.add' => 'addAdminMenu'
         );
         return $hooks;
     }
 	
-	/** Menu hook */
+	/** Normal menu hook */
 	public function addMenu() {
-		Piwik_AddMenu('Actions_Actions', 'SiteSearch_SubmenuSiteSearch',
+		Piwik_AddMenu('Actions_Actions', 'SiteSearch_SiteSearch',
 				array('module' => 'SiteSearch', 'action' => 'index'));
+	}
+	
+	/** Admin menu hook */
+	public function addAdminMenu() {
+		Piwik_AddAdminMenu('SiteSearch_SiteSearch',
+			array('module' => 'SiteSearch', 'action' => 'admin'),
+			Piwik::isUserIsSuperUser(), 8);
 	}
 }
 

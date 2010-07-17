@@ -24,7 +24,8 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	
 	/** Install the plugin */
 	function install() {
-		echo $query = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('site').'` '
+		$query = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('site').'` '
+		       . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
 		       . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
 		try {
 			Zend_Registry::get('db')->query($query);

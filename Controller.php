@@ -22,9 +22,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function admin() {
 		Piwik::checkUserIsSuperUser();
 		
-		$parameters = Piwik_Common::getRequestVar('SiteSearch_Parameters', array());
-		if (is_array($parameters) && count($parameters)) {
-			$this->setParameters($parameters);
+		$data = Piwik_Common::getRequestVar('SiteSearch_Data', array());
+		if (is_array($data) && count($data)) {
+			$this->setParameters($data);
 		}
 		
 		$view = new Piwik_View('SiteSearch/templates/admin.tpl');
@@ -37,12 +37,13 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		echo $view->render();
 	}
 	
-	/** Save search parameter names */
-	private function setParameters($parameters) {
+	/** Save search url and parameter names */
+	private function setParameters($data) {
 		$db = Zend_Registry::get('db');
-		foreach($parameters as $idsite => $param) {
+		foreach($data as $idsite => $siteData) {
 			$db->update(Piwik_Common::prefixTable('site'), 
-					array('sitesearch_parameter' => $param),
+					array('sitesearch_parameter' => $siteData['parameter'],
+					'sitesearch_url' => $siteData['url']),
 					'idsite = '.intval($idsite));
 		}
 	}

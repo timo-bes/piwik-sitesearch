@@ -2,11 +2,11 @@
 
 /**
  * Site Search Plugin
- * 
+ *
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-17
+ * Modified: 2010-07-18
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
@@ -19,19 +19,25 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			'author_homepage' => 'http://www.ezdesign.de/',
 			'version' => '0.1',
 			'translationAvailable' => true,
+			'TrackerPlugin' => true
 		);
 	}
 	
 	/** Install the plugin */
-	function install() {
-		$query = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('site').'` '
-		       . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
-		       . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
+	public function install() {
+		$query1 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('site').'` '
+		        . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
+		        . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
+		$query2 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
+		        . 'ADD `search_results` INTEGER NULL';
 		try {
-			Zend_Registry::get('db')->query($query);
+			Zend_Registry::get('db')->query($query1);
 		} catch (Exception $e) {
 			// if the column already exist do not throw error
 		}
+		try {
+			Zend_Registry::get('db')->query($query2);
+		} catch (Exception $e) {}
 	}
 	
 	/** Uninstall the plugin */
@@ -43,10 +49,11 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	}
 	
 	/** Register Hooks */
-	public function getListHooksRegistered(){
+	public function getListHooksRegistered() {
         $hooks = array(
 			'Menu.add' => 'addMenu',
-			'AdminMenu.add' => 'addAdminMenu'
+			'AdminMenu.add' => 'addAdminMenu',
+        	'Tracker.Action.record' => 'logResults'
         );
         return $hooks;
     }
@@ -63,6 +70,25 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			array('module' => 'SiteSearch', 'action' => 'admin'),
 			Piwik::isUserIsSuperUser(), 8);
 	}
+	
+	/** Logger hook: log number of results, if available */
+	public function logResults($notification) {
+		$action = $notification->getNotificationObject();
+		$idaction = $action->getIdActionUrl();
+		
+		$data = Piwik_Common::getRequestVar('data', '');
+		$data = html_entity_decode($data);
+		$data = json_decode($data, true);
+		if (!isset($data['SiteSearch_Results'])) return;
+		$resultCount = intval($data['SiteSearch_Results']);
+		
+		Piwik_Query('
+			UPDATE `'.Piwik_Common::prefixTable('log_action').'`
+			SET search_results = '.intval($resultCount).'
+			WHERE idaction = '.intval($idaction).'
+		');
+	}
+	
 }
 
 ?>

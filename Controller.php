@@ -19,11 +19,12 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		// keywords
 		$viewDataTable = Piwik_ViewDataTable::factory('table');
 		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
+		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'results'));
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
+		$viewDataTable->setColumnTranslation('results', Piwik_Translate('SiteSearch_Results'));
 		$viewDataTable->setSortedColumn('hits', 'desc');
 		$viewDataTable->setLimit(30);
-		$viewDataTable->setColumnsToDisplay(array('label', 'hits'));
 		$viewDataTable->disableFooter();
 		$viewDataTable->setTemplate('SiteSearch/templates/datatable.tpl');
 		$view->keywords = $this->renderView($viewDataTable, true);

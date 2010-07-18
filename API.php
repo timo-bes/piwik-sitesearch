@@ -70,6 +70,7 @@ class Piwik_SiteSearch_API {
 			SELECT
 				action.idaction,
 				action.name AS label,
+				action.search_results AS results,
 				COUNT(action.idaction) AS hits
 			FROM
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
@@ -141,12 +142,13 @@ class Piwik_SiteSearch_API {
 			$where = 'AND visit_action.'.$setAction.' = '.intval($idaction);
 		} else {
 			// analyze all keywords
-			$where = '';
+			// TODO: where clause checking site search url
+			$where = 'AND FALSE';
 		}
 		
 		$url = $site['main_url'];
-		if (substr($url, -1) != '/') {
-			$url .= '/';
+		if (substr($url, -1) == '/') {
+			$url = substr($url, 0, -1);
 		}
 		
 		$sql = '

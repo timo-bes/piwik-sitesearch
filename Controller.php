@@ -53,19 +53,15 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Get the pages for a keyword helper */
 	private function getPagesTable($idaction, $following) {
-		$idSite = intval(Piwik_Common::getRequestVar('idSite', 0));
-		$site = Piwik_SitesManager_API::getInstance()->getSiteFromId($idSite);
-		
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
 		
 		if ($idaction) {
 			$action = Piwik_FetchRow('
-				SELECT name
+				SELECT search_term
 				FROM '.Piwik_Common::prefixTable('log_action').'
 				WHERE idaction = '.$idaction.'
 			');
-			$parameter = $site['sitesearch_parameter'];
-			$view->keyword = htmlentities(Piwik_SiteSearch_API::extractKeyword($action['name'], $parameter));
+			$view->keyword = $action['search_term'];
 		} else {
 			$view->keyword = false;
 		}
@@ -112,6 +108,60 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 					array('sitesearch_parameter' => $siteData['parameter'],
 					'sitesearch_url' => $siteData['url']),
 					'idsite = '.intval($idsite));
+			if (isset($siteData['analyze']) && $siteData['analyze'] == 1) {
+				$this->analyzeSite($idsite);
+			}
+		}
+	}
+	
+	/** Analyze site for serach URLs */
+	private function analyzeSite($idSite) {
+		// remove all searchterms from db
+		Piwik_Query('
+			UPDATE '.Piwik_Common::prefixTable('log_action').' AS action
+			SET search_term = NULL
+			WHERE type = 1 AND search_term IS NOT NULL AND EXISTS (
+				SELECT
+					visit.idsite
+				FROM
+					'.Piwik_Common::prefixTable('log_link_visit_action').' AS link
+				LEFT JOIN
+					'.Piwik_Common::prefixTable('log_visit').' AS visit
+					ON visit.idvisit = link.idvisit
+				WHERE
+					visit.idsite = '.intval($idSite).' AND
+					link.idaction_url = action.idaction
+			)
+		');
+		
+		// rescan
+		$site = Piwik_SitesManager_API::getInstance()->getSiteFromId($idSite);
+		if (empty($site['sitesearch_url']) || empty($site['sitesearch_parameter'])) {
+			return;
+		}
+		
+		$url = $site['main_url'];
+		if (substr($url, -1) != '/') {
+			$url .= '/';
+		}
+		$url .= $site['sitesearch_url'];
+		
+		$sql = '
+			SELECT idaction, name
+			FROM '.Piwik_Common::prefixTable('log_action').'
+			WHERE type = 1 AND name LIKE "'.mysql_escape_string($url).'%"
+		';
+		$result = Piwik_FetchAll($sql);
+		$parameter = $site['sitesearch_parameter'];
+		foreach ($result as $action) {
+			$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
+			if ($hit) {
+				Piwik_Query('
+					UPDATE '.Piwik_Common::prefixTable('log_action').'
+					SET search_term = "'.mysql_escape_string(urldecode($match[1])).'"
+					where idaction = '.intval($action['idaction']).'
+				');
+			}
 		}
 	}
 	

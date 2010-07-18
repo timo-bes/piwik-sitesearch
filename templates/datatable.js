@@ -1,6 +1,6 @@
 $(document).ready(function() {
 	
-	$('#SiteSearch_Keywords tbody tr')
+	$('table.SiteSearch tbody tr')
 	.css('cursor', 'pointer')
 	.hover(function() {
 		$(this).find('td').css('color', '#1D3256');

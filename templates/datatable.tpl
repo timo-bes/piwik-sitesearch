@@ -1,4 +1,6 @@
-<script type="text/javascript" src="plugins/SiteSearch/templates/datatable.js"></script>
+{if $properties.uniqueId == "SiteSearchindex"}
+	<script type="text/javascript" src="plugins/SiteSearch/templates/datatable.js"></script>
+{/if}
 <div id="{$properties.uniqueId}">
 	<div class="{if isset($javascriptVariablesToSet.idSubtable)&& $javascriptVariablesToSet.idSubtable!=0}sub{/if}{if $javascriptVariablesToSet.viewDataTable=='tableAllColumns'}dataTableAllColumnsWrapper{elseif $javascriptVariablesToSet.viewDataTable=='tableGoals'}dataTableAllColumnsWrapper{else}dataTableWrapper{/if}">
 	{if isset($arrayDataTable.result) and $arrayDataTable.result == 'error'}
@@ -8,7 +10,7 @@
 		<div class="pk-emptyDataTable">{'CoreHome_TableNoData'|translate}</div>
 		{else}
 			<a name="{$properties.uniqueId}"></a>
-			<table cellspacing="0" class="dataTable" id="SiteSearch_Keywords"> 
+			<table cellspacing="0" class="dataTable SiteSearch"> 
 			<thead>
 			<tr>
 			{foreach from=$dataTableColumns item=column name=head}

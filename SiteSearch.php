@@ -29,6 +29,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		        . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
 		        . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
 		$query2 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
+		        . 'ADD `search_term` VARCHAR( 255 ) NULL,'
 		        . 'ADD `search_results` INTEGER NULL';
 		try {
 			Zend_Registry::get('db')->query($query1);
@@ -76,12 +77,57 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		$action = $notification->getNotificationObject();
 		$idaction = $action->getIdActionUrl();
 		
+		// search term
+		$sql = '
+			SELECT
+				site.main_url,
+				site.sitesearch_url,
+				site.sitesearch_parameter
+			FROM
+				'.Piwik_Common::prefixTable('site').' AS site
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+				ON site.idsite = visit.idsite
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS link
+				ON visit.idvisit = link.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action
+				ON action.idaction = link.idaction_url
+			WHERE
+				action.idaction = '.intval($idaction).'
+		';
+		
+		$result = Piwik_FetchAll($sql);
+		$site = $result[0];
+		if (!empty($site['sitesearch_url']) && !empty($site['sitesearch_parameter'])) {
+			$url = $site['main_url'];
+			if (substr($url, -1) != '/') {
+				$url .= '/';
+			}
+			$url .= $site['sitesearch_url'];
+			
+			$parameter = $site['sitesearch_parameter'];
+			$actionUrl = $action->getActionUrl();
+			if (substr($actionUrl, 0, strlen($url)) == $url) {
+				$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $actionUrl, $match);
+				if ($hit) {
+					$sql = '
+						UPDATE '.Piwik_Common::prefixTable('log_action').'
+						SET search_term = "'.mysql_escape_string(urldecode($match[1])).'"
+						where idaction = '.intval($idaction).'
+					';
+					Piwik_Query($sql);
+				}
+			}
+		}
+		
+		// search results
 		$data = Piwik_Common::getRequestVar('data', '');
 		$data = html_entity_decode($data);
 		$data = json_decode($data, true);
 		if (!isset($data['SiteSearch_Results'])) return;
 		$resultCount = intval($data['SiteSearch_Results']);
-		
 		Piwik_Query('
 			UPDATE `'.Piwik_Common::prefixTable('log_action').'`
 			SET search_results = '.intval($resultCount).'

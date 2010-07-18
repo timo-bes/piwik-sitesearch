@@ -6,12 +6,13 @@
 {'SiteSearch_AdminDescription'|translate}
 
 <form method="POST" action="{url module=SiteSearch action=admin}">
-<table class="adminTable adminTableNoBorder" style="width: 550px; margin: 15px 0">
+<table class="adminTable adminTableNoBorder" style="width: 700px; margin: 15px 0">
 	<thead>
 		<tr>
 			<td><b>{'SiteSearch_Website'|translate}</b></td>
 			<td><b>{'SiteSearch_SearchURL'|translate}</b></td>
 			<td><b>{'SiteSearch_SearchParameter'|translate}</b></td>
+			<td></td>
 		</tr>
 	</thead>
 	<tbody>
@@ -20,6 +21,7 @@
 			<td>{$site.name}</td>
 			<td><input name="SiteSearch_Data[{$site.idsite}][url]" value="{$site.sitesearch_url}" style="width: 200px"/></td>
 			<td><input name="SiteSearch_Data[{$site.idsite}][parameter]" value="{$site.sitesearch_parameter}" style="width: 100px"/></td>
+			<td><input name="SiteSearch_Data[{$site.idsite}][analyze]" value="1" type="checkbox"/>&nbsp;&nbsp;{'SiteSearch_AnalyzeURLsNow'|translate}</td>
 		</tr>
 		{/foreach}
 	</tbody>

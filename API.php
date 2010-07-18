@@ -44,12 +44,10 @@ class Piwik_SiteSearch_API {
 	public function getSearchKeywords($idSite, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
-		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();
 		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadSearchViews($site, $period);
+		$searchViews = $this->loadSearchViews($idSite, $period);
 		foreach ($searchViews as &$searchView) {
-			$searchView['label'] = self::extractKeyword($searchView['label'], $site['sitesearch_parameter']);
 			$table->addRow(new Piwik_DataTable_Row(array(
 				Piwik_DataTable_Row::COLUMNS => $searchView,
 				Piwik_DataTable_Row::METADATA => array('idaction' => $searchView['idaction'])
@@ -59,29 +57,12 @@ class Piwik_SiteSearch_API {
 		return $table;
 	}
 	
-	/** Extract keyword from URL */
-	public static function extractKeyword($url, $parameter) {
-		$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $url, $match);
-		if ($hit) {
-			$label = urldecode($match[1]);
-		} else {
-			$label = '(unknown)';
-		}
-		return $label;
-	}
-	
 	/** Get information about search access */
-	private function loadSearchViews($site, Piwik_Period $period) {
-		$url = $site['main_url'];
-		if (substr($url, -1) != '/') {
-			$url .= '/';
-		}
-		$url .= $site['sitesearch_url'];
-		
+	private function loadSearchViews($idSite, Piwik_Period $period) {
 		$sql = '
 			SELECT
 				action.idaction,
-				action.name AS label,
+				action.search_term AS label,
 				action.search_results AS results,
 				COUNT(action.idaction) AS hits
 			FROM
@@ -93,9 +74,9 @@ class Piwik_SiteSearch_API {
 				'.Piwik_Common::prefixTable('log_action').' AS action
 				ON action.idaction = visit_action.idaction_url
 			WHERE
-				visit.idsite = '.intval($site['idsite']).' AND
+				visit.idsite = '.intval($idSite['idsite']).' AND
 				action.type = 1 AND
-				action.name LIKE "'.mysql_escape_string($url).'%" AND
+				action.search_term IS NOT NULL AND
 				visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'"
 			GROUP BY
 				action.idaction

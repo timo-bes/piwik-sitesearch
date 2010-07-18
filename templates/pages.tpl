@@ -1,5 +1,6 @@
-<h2>Pages</h2>
+{if $keyword}
 <div style="margin-bottom: 15px">
 	Keyword: {$keyword}
 </div>
+{/if}
 {$table}

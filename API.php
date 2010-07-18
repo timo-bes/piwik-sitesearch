@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-17
+ * Modified: 2010-07-18
  */
 
 class Piwik_SiteSearch_API {
@@ -53,7 +53,7 @@ class Piwik_SiteSearch_API {
 		if ($hit) {
 			$label = urldecode($match[1]);
 		} else {
-			$label = '(error)';
+			$label = '(unknown)';
 		}
 		return $label;
 	}
@@ -82,7 +82,7 @@ class Piwik_SiteSearch_API {
 			WHERE
 				visit.idsite = '.intval($site['idsite']).' AND
 				action.type = 1 AND
-				action.name LIKE "'.mysql_real_escape_string($url).'%"
+				action.name LIKE "'.mysql_escape_string($url).'%"
 			GROUP BY
 				action.idaction
 		';
@@ -91,12 +91,25 @@ class Piwik_SiteSearch_API {
 	
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
-	public function getKeywordPages($idSite, $idaction) {
+	public function getFollowingPages($idSite, $idaction=false) {
+		return $this->getAssociatedPages($idSite, true, $idaction);
+	}
+	
+	/** Get the next sites before keyword was searched
+	 * @return Piwik_DataTable */
+	public function getPreviousPages($idSite, $idaction=false) {
+		return $this->getAssociatedPages($idSite, false, $idaction);
+	}
+	
+	/** Get table containing informatino about associated pages
+	 * @return Piwik_DataTable */
+	private function getAssociatedPages($idSite, $following, $idaction) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();
-		$searchViews = $this->loadKeywordPages($site, $idaction);
+		$searchViews = $this->loadAssociatedPages($site, $following, $idaction);
+		
 		foreach ($searchViews as &$searchView) {
 			$table->addRow(new Piwik_DataTable_Row(array(
 				Piwik_DataTable_Row::COLUMNS => $searchView
@@ -106,24 +119,53 @@ class Piwik_SiteSearch_API {
 		return $table;
 	}
 	
-	/** Get information about the next site after keyword was searched */
-	private function loadKeywordPages($site, $idaction) {
+	/**
+	 * Get information about pages associated with the search
+	 * following=true, idaction=false: all pages that were visited after a search
+	 * following=true, idaction=x: pages that were after seraching for a certain keyword
+	 * following=false, idaction=false: pages searches started from
+	 */
+	private function loadAssociatedPages($site, $following, $idaction) {
+		if ($following) {
+			// pages following a search
+			$getAction = 'idaction_url';
+			$setAction = 'idaction_url_ref';
+		} else {
+			// pages before a search
+			$getAction = 'idaction_url_ref';
+			$setAction = 'idaction_url';
+		}
+		
+		if ($idaction) {
+			// analyze one keyword
+			$where = 'AND visit_action.'.$setAction.' = '.intval($idaction);
+		} else {
+			// analyze all keywords
+			$where = '';
+		}
+		
+		$url = $site['main_url'];
+		if (substr($url, -1) != '/') {
+			$url .= '/';
+		}
+		
 		$sql = '
 			SELECT
 				action.idaction,
-				action.name AS label,
+				REPLACE(action.name, "'.mysql_escape_string($url).'", "") AS label,
 				COUNT(action.idaction) AS hits
 			FROM
 				'.Piwik_Common::prefixTable('log_action').' AS action
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
-				ON action.idaction = visit_action.idaction_url
+				ON action.idaction = visit_action.'.$getAction.'
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 				ON visit.idvisit = visit_action.idvisit
 			WHERE
 				visit.idsite = '.intval($site['idsite']).' AND
-				visit_action.idaction_url_ref = '.intval($idaction).'
+				visit_action.idaction_url_ref != 0
+				'.$where.'
 			GROUP BY
 				action.idaction
 		';

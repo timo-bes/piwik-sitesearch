@@ -4,5 +4,15 @@
 </div>
 
 <div id="rightcolumn">
-	<div id="sitesearch_pages"></div>
+	
+	<h2>Following Pages</h2>
+	<div id="sitesearch_following_pages" style="margin-bottom: 25px">
+		{$followingPages}
+	</div>
+	
+	<h2>Previous Pages</h2>
+	<div id="sitesearch_previous_pages">
+		{$previousPages}
+	</div>
+	
 </div>

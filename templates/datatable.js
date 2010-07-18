@@ -21,6 +21,8 @@ $(document).ready(function() {
 				action: 'pages',
 				idaction: id,
 				idSite: piwik.idSite,
+				period: piwik.period,
+				date: piwik.currentDateString,
 				following: followingVal
 			}, function(response){
 				$('#'+divId).html(response);

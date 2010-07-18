@@ -28,14 +28,26 @@ class Piwik_SiteSearch_API {
 		return Piwik_SitesManager_API::getInstance()->getSiteFromId($idSite);
 	}
 	
+	/** Convert date to sql ready string */
+	private function convertDate($date) {
+		return Piwik_Date::factory($date)->toString();
+	}
+	
+	/** Returns period object
+	 * @return Piwik_Period */
+	private function getPeriod($date, $period) {
+		return Piwik_Period::factory($period, Piwik_Date::factory($date));
+	}
+	
 	/** Get the most popular search keywords
 	 * @return Piwik_DataTable */
-	public function getSearchKeywords($idSite) {
+	public function getSearchKeywords($idSite, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();
-		$searchViews = $this->loadSearchViews($site);
+		$period = $this->getPeriod($date, $period);
+		$searchViews = $this->loadSearchViews($site, $period);
 		foreach ($searchViews as &$searchView) {
 			$searchView['label'] = self::extractKeyword($searchView['label'], $site['sitesearch_parameter']);
 			$table->addRow(new Piwik_DataTable_Row(array(
@@ -59,7 +71,7 @@ class Piwik_SiteSearch_API {
 	}
 	
 	/** Get information about search access */
-	private function loadSearchViews($site) {
+	private function loadSearchViews($site, Piwik_Period $period) {
 		$url = $site['main_url'];
 		if (substr($url, -1) != '/') {
 			$url .= '/';
@@ -83,7 +95,8 @@ class Piwik_SiteSearch_API {
 			WHERE
 				visit.idsite = '.intval($site['idsite']).' AND
 				action.type = 1 AND
-				action.name LIKE "'.mysql_escape_string($url).'%"
+				action.name LIKE "'.mysql_escape_string($url).'%" AND
+				visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'"
 			GROUP BY
 				action.idaction
 		';
@@ -92,24 +105,25 @@ class Piwik_SiteSearch_API {
 	
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
-	public function getFollowingPages($idSite, $idaction=false) {
-		return $this->getAssociatedPages($idSite, true, $idaction);
+	public function getFollowingPages($idSite, $idaction, $period, $date) {
+		return $this->getAssociatedPages($idSite, true, $idaction, $period, $date);
 	}
 	
 	/** Get the next sites before keyword was searched
 	 * @return Piwik_DataTable */
-	public function getPreviousPages($idSite, $idaction=false) {
-		return $this->getAssociatedPages($idSite, false, $idaction);
+	public function getPreviousPages($idSite, $idaction, $period, $date) {
+		return $this->getAssociatedPages($idSite, false, $idaction, $period, $date);
 	}
 	
 	/** Get table containing informatino about associated pages
 	 * @return Piwik_DataTable */
-	private function getAssociatedPages($idSite, $following, $idaction) {
+	private function getAssociatedPages($idSite, $following, $idaction, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();
-		$searchViews = $this->loadAssociatedPages($site, $following, $idaction);
+		$period = $this->getPeriod($date, $period);
+		$searchViews = $this->loadAssociatedPages($site, $following, $idaction, $period);
 		
 		foreach ($searchViews as &$searchView) {
 			$table->addRow(new Piwik_DataTable_Row(array(
@@ -126,7 +140,7 @@ class Piwik_SiteSearch_API {
 	 * following=true, idaction=x: pages that were after seraching for a certain keyword
 	 * following=false, idaction=false: pages searches started from
 	 */
-	private function loadAssociatedPages($site, $following, $idaction) {
+	private function loadAssociatedPages($site, $following, $idaction, Piwik_Period $period) {
 		if ($following) {
 			// pages following a search
 			$getAction = 'idaction_url';
@@ -166,7 +180,8 @@ class Piwik_SiteSearch_API {
 				ON visit.idvisit = visit_action.idvisit
 			WHERE
 				visit.idsite = '.intval($site['idsite']).' AND
-				visit_action.idaction_url_ref != 0
+				visit_action.idaction_url_ref != 0 AND
+				visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'"
 				'.$where.'
 			GROUP BY
 				action.idaction

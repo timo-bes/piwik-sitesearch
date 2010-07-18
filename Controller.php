@@ -12,13 +12,19 @@
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
+	public function __construct() {
+		parent::__construct();
+		$this->period = Piwik_Common::getRequestVar("period");
+	}
+	
 	/** The plugin index */
 	public function index() {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
 		
 		// keywords
 		$viewDataTable = Piwik_ViewDataTable::factory('table');
-		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
+		$viewDataTable->init($this->pluginName,  __FUNCTION__,
+				'SiteSearch.getSearchKeywords', $this->period, $this->date);
 		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'results'));
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
@@ -67,7 +73,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$viewDataTable = Piwik_ViewDataTable::factory('table');
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
-		$viewDataTable->init($this->pluginName, $id, $method, $idaction);
+		$viewDataTable->init($this->pluginName, $id, $method, $idaction, $this->period, $this->date);
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Page'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
 		$viewDataTable->setSortedColumn('hits', 'desc');

@@ -137,11 +137,13 @@ class Piwik_SiteSearch_API {
 		}
 		
 		if ($searchTerm) {
-			// analyze one keyword
-			$where = 'AND action.search_term = "'.mysql_escape_string($searchTerm).'"';
+			// analyze one search term
+			$searchTerm = mysql_escape_string($searchTerm);
+			$where = 'AND action_set.search_term = "'.$searchTerm.'" '
+			       . 'AND action_get.search_term != "'.$searchTerm.'" ';
 		} else {
 			// analyze all keywords
-			$where = 'AND action.search_term IS NOT NULL';
+			$where = 'AND action_set.search_term IS NOT NULL';
 		}
 		
 		$url = $site['main_url'];
@@ -151,14 +153,17 @@ class Piwik_SiteSearch_API {
 		
 		$sql = '
 			SELECT
-				action.idaction,
-				REPLACE(action.name, "'.mysql_escape_string($url).'", "") AS label,
-				COUNT(action.idaction) AS hits
+				action_get.idaction,
+				REPLACE(action_get.name, "'.mysql_escape_string($url).'", "") AS label,
+				COUNT(action_get.idaction) AS hits
 			FROM
-				'.Piwik_Common::prefixTable('log_action').' AS action
+				'.Piwik_Common::prefixTable('log_action').' AS action_set
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
-				ON action.idaction = visit_action.'.$getAction.'
+				ON action_set.idaction = visit_action.'.$setAction.'
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action_get
+				ON action_get.idaction = visit_action.'.$getAction.'
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 				ON visit.idvisit = visit_action.idvisit
@@ -168,7 +173,7 @@ class Piwik_SiteSearch_API {
 				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
 				'.$where.'
 			GROUP BY
-				action.idaction
+				action_get.idaction
 		';
 		return Piwik_FetchAll($sql);
 	}

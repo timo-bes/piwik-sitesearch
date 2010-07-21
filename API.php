@@ -141,7 +141,8 @@ class Piwik_SiteSearch_API {
 			// analyze one search term
 			$searchTerm = mysql_escape_string($searchTerm);
 			$where = 'AND action_set.search_term = "'.$searchTerm.'" '
-			       . 'AND action_get.search_term != "'.$searchTerm.'" ';
+			       . 'AND (action_get.search_term IS NULL OR '
+			       . 'action_get.search_term != "'.$searchTerm.'")';
 		} else {
 			// analyze all keywords
 			$where = 'AND action_set.search_term IS NOT NULL';

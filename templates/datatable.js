@@ -8,9 +8,7 @@ $(document).ready(function() {
 		$(this).find('td').css('color', '');
 	})
 	.click(function() {
-		var id = $(this).attr('id');
-		id = id.substring(6, id.length);
-		
+		var term = $(this).attr('searchterm');
 		var request = function(followingVal, divId) {
 			$('#'+divId).html('<div id="loadingPiwik">'
 					+ '<img alt="" src="themes/default/images/loading-blue.gif"> '
@@ -19,7 +17,7 @@ $(document).ready(function() {
 			$.post('index.php', {
 				module: 'SiteSearch',
 				action: 'pages',
-				idaction: id,
+				search_term: term,
 				idSite: piwik.idSite,
 				period: piwik.period,
 				date: piwik.currentDateString,

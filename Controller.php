@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-18
+ * Modified: 2010-07-21
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -22,9 +22,8 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
 		
 		// keywords
-		$viewDataTable = Piwik_ViewDataTable::factory('table');
-		$viewDataTable->init($this->pluginName,  __FUNCTION__,
-				'SiteSearch.getSearchKeywords', $this->period, $this->date);
+		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
+		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
 		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'results'));
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
@@ -44,32 +43,23 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Get the pages for a keyword */
 	public function pages() {
-		$idaction = intval(Piwik_Common::getRequestVar('idaction', 0));
-		if ($idaction == 0) exit;
+		$searchTerm = Piwik_Common::getRequestVar('search_term', '');
+		if ($searchTerm == '') exit;
 		
 		$following = Piwik_Common::getRequestVar('following', true) ? true : false;
-		echo $this->getPagesTable($idaction, $following);
+		echo $this->getPagesTable($searchTerm, $following);
 	}
 	
 	/** Get the pages for a keyword helper */
-	private function getPagesTable($idaction, $following) {
+	private function getPagesTable($searchTerm, $following) {
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
+		$view->keyword = $searchTerm;
 		
-		if ($idaction) {
-			$action = Piwik_FetchRow('
-				SELECT search_term
-				FROM '.Piwik_Common::prefixTable('log_action').'
-				WHERE idaction = '.$idaction.'
-			');
-			$view->keyword = $action['search_term'];
-		} else {
-			$view->keyword = false;
-		}
-		
-		$viewDataTable = Piwik_ViewDataTable::factory('table');
+		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
-		$viewDataTable->init($this->pluginName, $id, $method, $idaction, $this->period, $this->date);
+		$viewDataTable->init($this->pluginName, $id, $method);
+		$viewDataTable->setRequestParameter('search_term', $searchTerm);
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Page'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
 		$viewDataTable->setSortedColumn('hits', 'desc');

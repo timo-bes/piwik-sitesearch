@@ -21,7 +21,7 @@
 			
 			<tbody>
 			{foreach from=$arrayDataTable item=row}
-			<tr id="action{$row.metadata.idaction}">
+			<tr searchterm="{$row.metadata.search_term|htmlentities}">
 {foreach from=$dataTableColumns item=column}
 <td>
 {if !$row.idsubdatatable && $column=='label' && !empty($row.metadata.url)}<span class="urlLink">{$row.metadata.url}</span>{/if}

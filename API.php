@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-18
+ * Modified: 2010-07-21
  */
 
 class Piwik_SiteSearch_API {
@@ -50,7 +50,9 @@ class Piwik_SiteSearch_API {
 		foreach ($searchViews as &$searchView) {
 			$table->addRow(new Piwik_DataTable_Row(array(
 				Piwik_DataTable_Row::COLUMNS => $searchView,
-				Piwik_DataTable_Row::METADATA => array('idaction' => $searchView['idaction'])
+				Piwik_DataTable_Row::METADATA => array(
+					'search_term' => $searchView['label']
+				)
 			)));
 		}
 		
@@ -77,34 +79,36 @@ class Piwik_SiteSearch_API {
 				visit.idsite = '.intval($idSite['idsite']).' AND
 				action.type = 1 AND
 				action.search_term IS NOT NULL AND
-				visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'"
+				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
 			GROUP BY
-				action.idaction
+				action.search_term
 		';
 		return Piwik_FetchAll($sql);
 	}
 	
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
-	public function getFollowingPages($idSite, $idaction, $period, $date) {
-		return $this->getAssociatedPages($idSite, true, $idaction, $period, $date);
+	public function getFollowingPages($idSite, $period, $date) {
+		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		return $this->getAssociatedPages($idSite, true, $searchTerm, $period, $date);
 	}
 	
 	/** Get the next sites before keyword was searched
 	 * @return Piwik_DataTable */
-	public function getPreviousPages($idSite, $idaction, $period, $date) {
-		return $this->getAssociatedPages($idSite, false, $idaction, $period, $date);
+	public function getPreviousPages($idSite, $period, $date) {
+		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		return $this->getAssociatedPages($idSite, false, $searchTerm, $period, $date);
 	}
 	
 	/** Get table containing informatino about associated pages
 	 * @return Piwik_DataTable */
-	private function getAssociatedPages($idSite, $following, $idaction, $period, $date) {
+	private function getAssociatedPages($idSite, $following, $searchTerm, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();
 		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadAssociatedPages($site, $following, $idaction, $period);
+		$searchViews = $this->loadAssociatedPages($site, $following, $searchTerm, $period);
 		
 		foreach ($searchViews as &$searchView) {
 			$table->addRow(new Piwik_DataTable_Row(array(
@@ -117,11 +121,11 @@ class Piwik_SiteSearch_API {
 	
 	/**
 	 * Get information about pages associated with the search
-	 * following=true, idaction=false: all pages that were visited after a search
-	 * following=true, idaction=x: pages that were after seraching for a certain keyword
-	 * following=false, idaction=false: pages searches started from
+	 * following=true, searchTerm=false: all pages that were visited after a search
+	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
+	 * following=false, searchTerm=false: pages searches started from
 	 */
-	private function loadAssociatedPages($site, $following, $idaction, Piwik_Period $period) {
+	private function loadAssociatedPages($site, $following, $searchTerm, Piwik_Period $period) {
 		if ($following) {
 			// pages following a search
 			$getAction = 'idaction_url';
@@ -132,13 +136,12 @@ class Piwik_SiteSearch_API {
 			$setAction = 'idaction_url';
 		}
 		
-		if ($idaction) {
+		if ($searchTerm) {
 			// analyze one keyword
-			$where = 'AND visit_action.'.$setAction.' = '.intval($idaction);
+			$where = 'AND action.search_term = "'.mysql_escape_string($searchTerm).'"';
 		} else {
 			// analyze all keywords
-			// TODO: where clause checking site search url
-			$where = 'AND FALSE';
+			$where = 'AND action.search_term IS NOT NULL';
 		}
 		
 		$url = $site['main_url'];
@@ -162,7 +165,7 @@ class Piwik_SiteSearch_API {
 			WHERE
 				visit.idsite = '.intval($site['idsite']).' AND
 				visit_action.idaction_url_ref != 0 AND
-				visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'"
+				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
 				'.$where.'
 			GROUP BY
 				action.idaction

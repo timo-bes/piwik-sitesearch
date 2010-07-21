@@ -1,6 +1,6 @@
-$(document).ready(function() {
+function SiteSearch_ManipulateTable(selector) {
 	
-	$('table.SiteSearch tbody tr')
+	$(selector + ' table.SiteSearch tbody tr')
 	.css('cursor', 'pointer')
 	.hover(function() {
 		$(this).find('td').css('color', '#1D3256');
@@ -30,4 +30,5 @@ $(document).ready(function() {
 		request(1, 'sitesearch_following_pages');
 		request(0, 'sitesearch_previous_pages');
 	});
-});
+	
+}

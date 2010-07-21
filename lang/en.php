@@ -27,6 +27,7 @@ $translations = array(
 	'SiteSearch_Save' => 'Save',
 	'SiteSearch_Keyword' => 'Keyword',
 	'SiteSearch_Hits' => 'Hits',
+	'SiteSearch_UniqueHits' => 'Unique Hits',
 	'SiteSearch_Results' => 'Results',
 	'SiteSearch_Page' => 'Page'
 );

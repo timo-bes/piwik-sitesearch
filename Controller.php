@@ -20,25 +20,31 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	/** The plugin index */
 	public function index() {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
-		
-		// keywords
-		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
-		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
-		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'results'));
-		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
-		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
-		$viewDataTable->setColumnTranslation('results', Piwik_Translate('SiteSearch_Results'));
-		$viewDataTable->setSortedColumn('hits', 'desc');
-		$viewDataTable->setLimit(30);
-		$viewDataTable->disableFooter();
-		$viewDataTable->setTemplate('SiteSearch/templates/datatable.tpl');
-		$view->keywords = $this->renderView($viewDataTable, true);
-		
-		// pages
+		$view->keywords = $this->keywords(true);
 		$view->followingPages = $this->getPagesTable(false, true);
 		$view->previousPages = $this->getPagesTable(false, false);
-		
+		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/datatable.js"></script>';
 		echo $view->render();
+	}
+	
+	/** Keywords overview */
+	public function keywords($return=false) {
+		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
+		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
+		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'unique_hits', 'results'));
+		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
+		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
+		$viewDataTable->setColumnTranslation('unique_hits', Piwik_Translate('SiteSearch_UniqueHits'));
+		$viewDataTable->setColumnTranslation('results', Piwik_Translate('SiteSearch_Results'));
+		$viewDataTable->setSortedColumn('unique_hits', 'desc');
+		$viewDataTable->disableFooterIcons();
+		$viewDataTable->setLimit(20);
+		$viewDataTable->setTemplate('SiteSearch/templates/datatable.tpl');
+		$result = $this->renderView($viewDataTable, true);
+		if ($return) {
+			return $result;
+		}
+		echo $result;
 	}
 	
 	/** Get the pages for a keyword */

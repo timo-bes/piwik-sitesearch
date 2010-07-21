@@ -1,6 +1,3 @@
-{if $properties.uniqueId == "SiteSearchindex"}
-	<script type="text/javascript" src="plugins/SiteSearch/templates/datatable.js"></script>
-{/if}
 <div id="{$properties.uniqueId}">
 	<div class="{if isset($javascriptVariablesToSet.idSubtable)&& $javascriptVariablesToSet.idSubtable!=0}sub{/if}{if $javascriptVariablesToSet.viewDataTable=='tableAllColumns'}dataTableAllColumnsWrapper{elseif $javascriptVariablesToSet.viewDataTable=='tableGoals'}dataTableAllColumnsWrapper{else}dataTableWrapper{/if}">
 	{if isset($arrayDataTable.result) and $arrayDataTable.result == 'error'}
@@ -42,3 +39,6 @@
 	{/if}
 	</div>
 </div>
+<script type="text/javascript">
+	SiteSearch_ManipulateTable('#{$properties.uniqueId}');
+</script>

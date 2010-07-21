@@ -66,7 +66,8 @@ class Piwik_SiteSearch_API {
 				action.idaction,
 				action.search_term AS label,
 				action.search_results AS results,
-				COUNT(action.idaction) AS hits
+				COUNT(action.idaction) AS hits,
+				COUNT(DISTINCT visit.idvisit) AS unique_hits
 			FROM
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 			LEFT JOIN

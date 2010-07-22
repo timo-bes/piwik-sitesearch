@@ -44,7 +44,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	/** Uninstall the plugin */
 	public function uninstall() {
 		$query = 'ALTER TABLE `'.Piwik_Common::prefixTable('site').'` '
-		       . 'DROP `sitesearch_parameter`, '
+		       . 'DROP `sitesearch_url`, '
 		       . 'DROP `sitesearch_parameter`';
 		
 		Zend_Registry::get('db')->query($query);

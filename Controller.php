@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-21
+ * Modified: 2010-07-22
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -15,16 +15,40 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function __construct() {
 		parent::__construct();
 		$this->period = Piwik_Common::getRequestVar("period");
+		$this->range = Piwik_Period_Range::factory($this->period, $this->date);
 	}
 	
 	/** The plugin index */
 	public function index() {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
+		$view->evolution = $this->evolution(true);
 		$view->keywords = $this->keywords(true);
 		$view->followingPages = $this->getPagesTable(false, true);
 		$view->previousPages = $this->getPagesTable(false, false);
-		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/datatable.js"></script>';
+		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
 		echo $view->render();
+	}
+	
+	/** Search evolution */
+	public function evolution($return=false) {
+		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		
+		$graph = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
+		$graph->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchEvolution');
+		$graph->setColumnTranslation('visitsWithSearches', 'Visits with Searches');
+		$graph->setColumnTranslation('totalSearches', 'Total Searches');
+		
+		if ($searchTerm) {
+			$graph->setFooterMessage('Keyword: '.htmlentities($searchTerm));
+			$graph->setRequestParameter('search_term', $searchTerm);
+		}
+		
+		$result = $this->renderView($graph, true);
+		
+		if ($return) {
+			return $result;
+		}
+		echo $result;
 	}
 	
 	/** Keywords overview */
@@ -60,6 +84,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	private function getPagesTable($searchTerm, $following) {
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
 		$view->keyword = $searchTerm;
+		$view->period = $this->range->getLocalizedLongString();
 		
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
@@ -69,9 +94,8 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Page'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
 		$viewDataTable->setSortedColumn('hits', 'desc');
-		$viewDataTable->setLimit(30);
 		$viewDataTable->setColumnsToDisplay(array('label', 'hits'));
-		$viewDataTable->disableFooter();
+		$viewDataTable->disableFooterIcons();
 		$view->table = $this->renderView($viewDataTable, true);
 		
 		return $view->render();

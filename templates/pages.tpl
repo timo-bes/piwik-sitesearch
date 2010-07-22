@@ -1,6 +1,7 @@
-{if $keyword}
 <div style="margin-bottom: 15px">
-	Keyword: {$keyword}
+	{if $keyword}
+	Keyword: {$keyword}<br />
+	{/if}
+	Period: {$period}
 </div>
-{/if}
 {$table}

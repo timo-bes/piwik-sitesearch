@@ -5,6 +5,11 @@
 
 <div id="rightcolumn">
 	
+	<h2>Evolution</h2>
+	<div id="sitesearch_evolution" style="margin-bottom: 25px">
+		{$evolution}
+	</div>
+		
 	<h2>Following Pages</h2>
 	<div id="sitesearch_following_pages" style="margin-bottom: 25px">
 		{$followingPages}

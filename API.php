@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-21
+ * Modified: 2010-07-23
  */
 
 class Piwik_SiteSearch_API {
@@ -37,6 +37,68 @@ class Piwik_SiteSearch_API {
 	 * @return Piwik_Period */
 	private function getPeriod($date, $period) {
 		return Piwik_Period::factory($period, Piwik_Date::factory($date));
+	}
+	
+	/** Get evolution of search
+	 * @return Piwik_DataTable*/
+	public function getSearchEvolution($idSite, $period, $date) {
+		$period = new Piwik_Period_Range($period, 'last12');
+		$dateStart = $period->getDateStart()->toString();
+		$dateEnd = $period->getDateEnd()->toString();
+		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		
+		$where = '';
+		if ($searchTerm) {
+			$where = 'AND action.search_term = "'.mysql_escape_string($searchTerm).'"';
+		}
+		
+		// TODO: exclude multiple result pages from totalSearches
+		// check, whether previous action had the same keyword
+		$query = '
+			SELECT
+				visit.visit_server_date AS date,
+				COUNT(action.idaction) AS searches,
+				COUNT(DISTINCT visit.idvisit) AS visits
+			FROM
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
+				ON visit.idvisit = visit_action.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action
+				ON action.idaction = visit_action.idaction_url
+			WHERE
+				visit.idsite = '.intval($idSite).' AND
+				action.type = 1 AND
+				action.search_term IS NOT NULL AND
+				(visit.visit_server_date BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'")
+				'.$where.'
+			GROUP BY
+				visit.visit_server_date
+		';
+		$result = Piwik_FetchAll($query);
+		
+		$dataTable = new Piwik_DataTable();
+		$data = array();
+		$i = 0;
+		foreach ($period->getSubperiods() as $subPeriod) {
+			$dateStart = $subPeriod->getDateStart();
+			$dateEnd = $subPeriod->getDateEnd();
+			$visits = 0;
+			$searches = 0;
+			while (isset($result[$i]) && $result[$i]['date'] <= $dateEnd) {
+				$visits += $result[$i]['visits'];
+				$searches += $result[$i]['searches'];
+				$i++;
+			}
+			$data[$subPeriod->getLocalizedShortString()] = array(
+				'visitsWithSearches' => $visits,
+				'totalSearches' => $searches
+			);
+		}
+		
+		$dataTable->addRowsFromArrayWithIndexLabel($data);
+		return $dataTable;
 	}
 	
 	/** Get the most popular search keywords

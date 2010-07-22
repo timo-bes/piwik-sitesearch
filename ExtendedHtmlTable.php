@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Extended HTML Data Table
+ *
+ * Author:   Timo Besenreuther
+ *           EZdesign.de
+ * Created:  2010-07-21
+ * Modified: 2010-07-22
+ */
+
 class Piwik_SiteSearch_ExtendedHtmlTable
 		extends Piwik_ViewDataTable_HtmlTable {
 	

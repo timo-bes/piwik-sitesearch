@@ -6,7 +6,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-18
+ * Modified: 2010-07-22
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
@@ -44,7 +44,14 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	/** Uninstall the plugin */
 	public function uninstall() {
 		$query = 'ALTER TABLE `'.Piwik_Common::prefixTable('site').'` '
+		       . 'DROP `sitesearch_parameter`, '
 		       . 'DROP `sitesearch_parameter`';
+		
+		Zend_Registry::get('db')->query($query);
+		
+		$query = 'ALTER TABLE `'.Piwik_Common::prefixTable('log_action').'` '
+		       . 'DROP `search_term`, '
+		       . 'DROP `search_results`';
 		
 		Zend_Registry::get('db')->query($query);
 	}

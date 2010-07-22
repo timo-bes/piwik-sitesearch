@@ -3,7 +3,21 @@
 {include file="CoreAdminHome/templates/header.tpl"}
 
 <h2>{'SiteSearch_SiteSearch'|translate}</h2>
-{'SiteSearch_AdminDescription'|translate}
+<p>
+	{'SiteSearch_AdminDescription1'|translate}
+</p>
+<p>
+	{'SiteSearch_AdminDescription2'|translate}<br />
+	<b>{'SiteSearch_SearchURL'|translate}:</b>
+	{'SiteSearch_SearchURLDescription'|translate}<br />
+	<b>{'SiteSearch_SearchParameter'|translate}:</b>
+	{'SiteSearch_SearchParameterDescription'|translate}<br />
+</p> 
+<p>
+	{'SiteSearch_AdminDescription3'|translate}<br />
+	{'SiteSearch_AdminDescription4'|translate}
+</p>
+
 
 <form method="POST" action="{url module=SiteSearch action=admin}">
 <table class="adminTable adminTableNoBorder" style="width: 700px; margin: 15px 0">

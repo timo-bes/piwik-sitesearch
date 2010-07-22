@@ -183,18 +183,20 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$sql = '
 			SELECT idaction, name
 			FROM '.Piwik_Common::prefixTable('log_action').'
-			WHERE type = 1 AND name LIKE "'.mysql_escape_string($url).'%"
+			WHERE type = 1 AND name LIKE :name"
 		';
+		$bind = array(':name' => $url.'%');
 		$result = Piwik_FetchAll($sql);
 		$parameter = $site['sitesearch_parameter'];
 		foreach ($result as $action) {
 			$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
 			if ($hit) {
+				$bind[':searchTerm'] = urldecode($match[1]);
 				Piwik_Query('
 					UPDATE '.Piwik_Common::prefixTable('log_action').'
-					SET search_term = "'.mysql_escape_string(urldecode($match[1])).'"
+					SET search_term = :searchTerm
 					where idaction = '.intval($action['idaction']).'
-				');
+				', $bind);
 			}
 		}
 	}

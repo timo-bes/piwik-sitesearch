@@ -121,10 +121,10 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 				if ($hit) {
 					$sql = '
 						UPDATE '.Piwik_Common::prefixTable('log_action').'
-						SET search_term = "'.mysql_escape_string(urldecode($match[1])).'"
-						where idaction = '.intval($idaction).'
+						SET search_term = :searchTerm
+						WHERE idaction = '.intval($idaction).'
 					';
-					Piwik_Query($sql);
+					Piwik_Query($sql, array(':searchTerm' => urldecode($match[1])));
 				}
 			}
 		}

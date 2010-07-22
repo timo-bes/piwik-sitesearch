@@ -63,8 +63,10 @@ class Piwik_SiteSearch_API {
 		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
 		
 		$where = '';
+		$bind = array();
 		if ($searchTerm) {
-			$where = 'AND action.search_term = "'.mysql_escape_string($searchTerm).'"';
+			$where = 'AND action.search_term = :searchTerm';
+			$bind[':searchTerm'] = $searchTerm;
 		}
 		
 		// TODO: exclude multiple result pages from totalSearches
@@ -91,7 +93,7 @@ class Piwik_SiteSearch_API {
 			GROUP BY
 				visit.visit_server_date
 		';
-		$result = Piwik_FetchAll($query);
+		$result = Piwik_FetchAll($query, $bind);
 		
 		$dataTable = new Piwik_DataTable();
 		$data = array();
@@ -228,12 +230,13 @@ class Piwik_SiteSearch_API {
 			$setAction = 'idaction_url';
 		}
 		
+		$bind = array();
 		if ($searchTerm) {
 			// analyze one search term
-			$searchTerm = mysql_escape_string($searchTerm);
-			$where = 'AND action_set.search_term = "'.$searchTerm.'" '
+			$where = 'AND action_set.search_term = :searchTerm '
 			       . 'AND (action_get.search_term IS NULL OR '
-			       . 'action_get.search_term != "'.$searchTerm.'")';
+			       . 'action_get.search_term != :searchTerm)';
+			$bind[':searchTerm'] = $searchTerm;
 		} else {
 			// analyze all keywords
 			$where = 'AND action_set.search_term IS NOT NULL';
@@ -243,11 +246,12 @@ class Piwik_SiteSearch_API {
 		if (substr($url, -1) == '/') {
 			$url = substr($url, 0, -1);
 		}
+		$bind[':url'] = $url;
 		
 		$sql = '
 			SELECT
 				action_get.idaction,
-				REPLACE(action_get.name, "'.mysql_escape_string($url).'", "") AS label,
+				REPLACE(action_get.name, :url, "") AS label,
 				COUNT(action_get.idaction) AS hits
 			FROM
 				'.Piwik_Common::prefixTable('log_action').' AS action_set
@@ -268,7 +272,7 @@ class Piwik_SiteSearch_API {
 			GROUP BY
 				action_get.idaction
 		';
-		return Piwik_FetchAll($sql);
+		return Piwik_FetchAll($sql, $bind);
 	}
 	
 }

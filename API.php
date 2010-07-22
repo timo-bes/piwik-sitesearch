@@ -42,6 +42,21 @@ class Piwik_SiteSearch_API {
 	/** Get evolution of search
 	 * @return Piwik_DataTable*/
 	public function getSearchEvolution($idSite, $period, $date) {
+		switch ($period) {
+		case 'year':
+			$period = 'month';
+			break;
+		case 'month':
+			$period = 'week';
+			break;
+		case 'week':
+			$period = 'day';
+			break;
+		case 'day':
+		default:
+			break;
+		}
+		
 		$period = new Piwik_Period_Range($period, 'last12');
 		$dateStart = $period->getDateStart()->toString();
 		$dateEnd = $period->getDateEnd()->toString();

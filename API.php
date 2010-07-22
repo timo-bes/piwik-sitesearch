@@ -146,7 +146,8 @@ class Piwik_SiteSearch_API {
 	private function loadSearchViews($idSite, Piwik_Period $period, $noResults) {
 		$where = '';
 		if ($noResults) {
-			$where = 'AND action.search_results = 0';
+			$where = 'AND (action.search_results IS NULL '
+			       . 'OR action.search_results = 0)';
 		}
 		
 		$sql = '

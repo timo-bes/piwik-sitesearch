@@ -30,6 +30,7 @@ function SiteSearch_ManipulateTable(selector) {
 		request('pages', 1, 'sitesearch_following_pages');
 		request('pages', 0, 'sitesearch_previous_pages');
 		request('evolution', false, 'sitesearch_evolution');
+        request('getRefinements', false, 'sitesearch_refinements');
 	});
 	
 }

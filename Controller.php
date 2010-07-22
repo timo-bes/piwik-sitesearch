@@ -26,6 +26,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->noResults = $this->noResults();
 		$view->followingPages = $this->getPagesTable(false, true);
 		$view->previousPages = $this->getPagesTable(false, false);
+        $view->refinements = $this->getRefinements(true);
 		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
 		echo $view->render();
 	}
@@ -114,7 +115,28 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		
 		return $view->render();
 	}
-	
+
+    /** Get search refinements */
+	public function getRefinements($return=false) {
+        $searchTerm = Piwik_Common::getRequestVar('search_term', false);
+        
+		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
+		$method = 'SiteSearch.getSearchRefinements';
+		$viewDataTable->init($this->pluginName, __FUNCTION__, $method);
+		$viewDataTable->setRequestParameter('search_term', $searchTerm);
+		$viewDataTable->setColumnTranslation('keyword', Piwik_Translate('SiteSearch_Keyword'));
+		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
+		$viewDataTable->setSortedColumn('hits', 'desc');
+		$viewDataTable->setColumnsToDisplay(array('keyword', 'hits'));
+		$viewDataTable->disableFooterIcons();
+
+		$table = $this->renderView($viewDataTable, true);
+        if ($return) {
+            return $table;
+        }
+        echo $table;
+	}
+
 	/** Administration index */
 	public function admin() {
 		Piwik::checkUserIsSuperUser();

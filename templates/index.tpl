@@ -22,5 +22,10 @@
 	<div id="sitesearch_previous_pages">
 		{$previousPages}
 	</div>
-	
+
+    <h2>Refinements</h2>
+    <div id="sitesearch_refinements">
+		{$refinements}
+	</div>
+
 </div>

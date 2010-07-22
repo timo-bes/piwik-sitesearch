@@ -1,6 +1,9 @@
 <div id="leftcolumn">
 	<h2>Keywords</h2>
 	{$keywords}
+	
+	<h2>Searches without results</h2>
+	{$noResults}
 </div>
 
 <div id="rightcolumn">

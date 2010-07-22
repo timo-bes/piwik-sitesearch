@@ -23,6 +23,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
 		$view->evolution = $this->evolution(true);
 		$view->keywords = $this->keywords(true);
+		$view->noResults = $this->noResults();
 		$view->followingPages = $this->getPagesTable(false, true);
 		$view->previousPages = $this->getPagesTable(false, false);
 		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
@@ -69,6 +70,19 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			return $result;
 		}
 		echo $result;
+	}
+	
+	/** Find searches without results */
+	public function noResults() {
+		$view = Piwik_ViewDataTable::factory('table');
+		$view->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getNoResults');
+		$view->setColumnsToDisplay(array('label', 'hits', 'unique_hits'));
+		$view->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
+		$view->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
+		$view->setColumnTranslation('unique_hits', Piwik_Translate('SiteSearch_UniqueHits'));
+		$view->setSortedColumn('label', 'asc');
+		$view->disableFooterIcons();
+		return $this->renderView($view, true);
 	}
 	
 	/** Get the pages for a keyword */

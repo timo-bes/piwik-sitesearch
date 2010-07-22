@@ -118,12 +118,12 @@ class Piwik_SiteSearch_API {
 	
 	/** Get the most popular search keywords
 	 * @return Piwik_DataTable */
-	public function getSearchKeywords($idSite, $period, $date) {
+	public function getSearchKeywords($idSite, $period, $date, $noResults=false) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$table = new Piwik_DataTable();
 		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadSearchViews($idSite, $period);
+		$searchViews = $this->loadSearchViews($idSite, $period, $noResults);
 		foreach ($searchViews as &$searchView) {
 			$table->addRow(new Piwik_DataTable_Row(array(
 				Piwik_DataTable_Row::COLUMNS => $searchView,
@@ -136,8 +136,19 @@ class Piwik_SiteSearch_API {
 		return $table;
 	}
 	
+	/** Get keywords without search results
+	 * @return Piwik_DataTable */
+	public function getNoResults($idSite, $period, $date) {
+		return $this->getSearchKeywords($idSite, $period, $date, true);
+	}
+	
 	/** Get information about search access */
-	private function loadSearchViews($idSite, Piwik_Period $period) {
+	private function loadSearchViews($idSite, Piwik_Period $period, $noResults) {
+		$where = '';
+		if ($noResults) {
+			$where = 'AND action.search_results = 0';
+		}
+		
 		$sql = '
 			SELECT
 				action.idaction,
@@ -158,9 +169,11 @@ class Piwik_SiteSearch_API {
 				action.type = 1 AND
 				action.search_term IS NOT NULL AND
 				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
+				'.$where.'
 			GROUP BY
 				action.search_term
 		';
+		
 		return Piwik_FetchAll($sql);
 	}
 	

@@ -124,18 +124,13 @@ class Piwik_SiteSearch_API {
 		Piwik::checkUserHasViewAccess($idSite);
 		
 		$table = new Piwik_DataTable();
+        if ($noResults) {
+            return $table;
+        }
+
 		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadSearchViews($idSite, $period, $noResults);
-		foreach ($searchViews as &$searchView) {
-			$table->addRow(new Piwik_DataTable_Row(array(
-				Piwik_DataTable_Row::COLUMNS => $searchView,
-				Piwik_DataTable_Row::METADATA => array(
-					'search_term' => $searchView['label']
-				)
-			)));
-		}
-		
-		return $table;
+		$searchViews = $this->loadSearchViews($idSite, $period, $date, $noResults);
+		return $searchViews;
 	}
 	
 	/** Get keywords without search results
@@ -143,42 +138,34 @@ class Piwik_SiteSearch_API {
 	public function getNoResults($idSite, $period, $date) {
 		return $this->getSearchKeywords($idSite, $period, $date, true);
 	}
-	
-	/** Get information about search access */
-	private function loadSearchViews($idSite, Piwik_Period $period, $noResults) {
-		$where = '';
-		if ($noResults) {
-			$where = 'AND (action.search_results IS NULL '
-			       . 'OR action.search_results = 0)';
-		}
-		
-		$sql = '
-			SELECT
-				action.idaction,
-				action.search_term AS label,
-				action.search_results AS results,
-				COUNT(action.idaction) AS hits,
-				COUNT(DISTINCT visit.idvisit) AS unique_hits
-			FROM
-				'.Piwik_Common::prefixTable('log_visit').' AS visit
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
-				ON visit.idvisit = visit_action.idvisit
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_action').' AS action
-				ON action.idaction = visit_action.idaction_url
-			WHERE
-				visit.idsite = '.intval($idSite['idsite']).' AND
-				action.type = 1 AND
-				action.search_term IS NOT NULL AND
-				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
-				'.$where.'
-			GROUP BY
-				action.search_term
-		';
-		
-		return Piwik_FetchAll($sql);
-	}
+
+    /** Load search data
+     * @return Piwik_DataTable */
+    private function loadSearchViews($idSite, Piwik_Period $period, $date, $noResults) {
+        if ($noResults) {
+            // TODO: archive keywords without results
+            return array();
+        } else {
+            return $this->getDataTable('SiteSearch_keywords', $idSite, $period, $date);
+        }
+    }
+
+    /** Get data table from archive
+     * @return Piwik_DataTable */
+    private function getDataTable($name, $idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
+
+        // TODO: $period is Piwik_Period_Day => transform to 'day'
+        $archive = Piwik_Archive::build($idSite, 'day', $date);
+        $dataTable = $archive->getDataTable($name);
+        
+		$dataTable->queueFilter('Sort', array('unique_hits', 'desc', false));
+		$dataTable->queueFilter('ReplaceColumnNames', 
+                array(false, Piwik_SiteSearch::$indexToNameMapping));
+        $dataTable->applyQueuedFilters();
+
+		return $dataTable;
+    }
 	
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
@@ -368,5 +355,3 @@ class Piwik_SiteSearch_API {
 	}
 	
 }
-
-?>

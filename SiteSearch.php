@@ -10,7 +10,21 @@
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
-	
+
+    /** Archive indexes */
+    const INDEX_SEARCH_TERM = 0;
+    const INDEX_SUM_HITS = 1;
+    const INDEX_SUM_UNIQUE_HITS = 2;
+    const INDEX_RESULTS = 3;
+    
+
+    public static $indexToNameMapping = array(
+		self::INDEX_SUM_HITS => 'hits',
+        self::INDEX_SUM_UNIQUE_HITS => 'unique_hits',
+        self::INDEX_RESULTS => 'results',
+        self::INDEX_SEARCH_TERM => 'label'
+    );
+
 	/** Information about this plugin */
 	public function getInformation() {
 		return array(
@@ -61,7 +75,8 @@ class Piwik_SiteSearch extends Piwik_Plugin {
         $hooks = array(
 			'Menu.add' => 'addMenu',
 			'AdminMenu.add' => 'addAdminMenu',
-        	'Tracker.Action.record' => 'logResults'
+        	'Tracker.Action.record' => 'logResults',
+            'ArchiveProcessing_Day.compute' => 'archiveDay'
         );
         return $hooks;
     }
@@ -77,6 +92,86 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		Piwik_AddAdminMenu('SiteSearch_SiteSearch',
 			array('module' => 'SiteSearch', 'action' => 'admin'),
 			Piwik::isUserIsSuperUser(), 8);
+	}
+
+    /** Build archive for a day */
+    public function archiveDay($notification) {
+		$archiveProcessing = $notification->getNotificationObject();
+		$this->archiveDayAggregateKeywords($archiveProcessing);
+	}
+
+    /** Archive day: keywords */
+	protected function archiveDayAggregateKeywords($archiveProcessing) {
+        $idsite = $archiveProcessing->idsite;
+        $from = $archiveProcessing->getStartDatetimeUTC();
+        $to = $archiveProcessing->getEndDatetimeUTC();
+
+        $sql = '
+			SELECT
+				action.idaction,
+				action.search_term AS label,
+				action.search_results AS results,
+				COUNT(action.idaction) AS hits,
+				COUNT(DISTINCT visit.idvisit) AS unique_hits
+			FROM
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
+				ON visit.idvisit = visit_action.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action
+				ON action.idaction = visit_action.idaction_url
+			WHERE
+				visit.idsite = '.intval($idsite).' AND
+				action.type = 1 AND
+				action.search_term IS NOT NULL AND
+				(visit.visit_server_date BETWEEN "'.$from.'" AND "'.$to.'")
+			GROUP BY
+				action.search_term
+		';
+
+		$result = Piwik_FetchAll($sql);
+
+        $archiveData = array();
+		foreach ($result as $search) {
+            $label = $search['label'];
+			if (!isset($interest[$label])) {
+                $archiveData[$label] = $this->getNewArchiveRow($label);
+            }
+			$this->updateArchiveRow($search, $archiveData[$label]);
+		}
+
+        $dataTable = new Piwik_DataTable();
+        foreach ($archiveData as &$searchView) {
+			$dataTable->addRow(new Piwik_DataTable_Row(array(
+				Piwik_DataTable_Row::COLUMNS => $searchView,
+				Piwik_DataTable_Row::METADATA => array(
+					'search_term' => $searchView[self::INDEX_SEARCH_TERM]
+				)
+			)));
+		}
+
+		$archiveProcessing->insertBlobRecord('SiteSearch_keywords',
+                $dataTable->getSerialized());
+
+		destroy($dataTable);
+	}
+
+    /** Returns an empty row containing default values for archiving */
+	public function getNewArchiveRow($searchTerm) {
+		return array(
+            self::INDEX_SEARCH_TERM => $searchTerm,
+            self::INDEX_SUM_HITS => 0,
+            self::INDEX_SUM_UNIQUE_HITS => 0,
+            self::INDEX_RESULTS => 0
+		);
+	}
+
+    /** Adds a new record to the existing archive row */
+	public function updateArchiveRow($add, &$row) {
+		$row[self::INDEX_SUM_HITS] += $add['hits'];
+        $row[self::INDEX_SUM_UNIQUE_HITS] += $add['unique_hits'];
+        $row[self::INDEX_RESULTS] = $add['results'];
 	}
 	
 	/** Logger hook: log number of results, if available */
@@ -143,5 +238,3 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	}
 	
 }
-
-?>

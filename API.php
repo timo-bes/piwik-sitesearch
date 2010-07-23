@@ -122,50 +122,19 @@ class Piwik_SiteSearch_API {
 	 * @return Piwik_DataTable */
 	public function getSearchKeywords($idSite, $period, $date, $noResults=false) {
 		Piwik::checkUserHasViewAccess($idSite);
-		
-		$table = new Piwik_DataTable();
-        if ($noResults) {
-            return $table;
-        }
-
 		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadSearchViews($idSite, $period, $date, $noResults);
-		return $searchViews;
+		return Piwik_SiteSearch_Archive::getDataTable(
+				'keywords', $idSite, $period, $date);
 	}
 	
 	/** Get keywords without search results
 	 * @return Piwik_DataTable */
 	public function getNoResults($idSite, $period, $date) {
-		return $this->getSearchKeywords($idSite, $period, $date, true);
-	}
-
-    /** Load search data
-     * @return Piwik_DataTable */
-    private function loadSearchViews($idSite, Piwik_Period $period, $date, $noResults) {
-        if ($noResults) {
-            // TODO: archive keywords without results
-            return array();
-        } else {
-            return $this->getDataTable('SiteSearch_keywords', $idSite, $period, $date);
-        }
-    }
-
-    /** Get data table from archive
-     * @return Piwik_DataTable */
-    private function getDataTable($name, $idSite, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
-
-        // TODO: $period is Piwik_Period_Day => transform to 'day'
-        $archive = Piwik_Archive::build($idSite, 'day', $date);
-        $dataTable = $archive->getDataTable($name);
-        
-		$dataTable->queueFilter('Sort', array('unique_hits', 'desc', false));
-		$dataTable->queueFilter('ReplaceColumnNames', 
-                array(false, Piwik_SiteSearch::$indexToNameMapping));
-        $dataTable->applyQueuedFilters();
-
-		return $dataTable;
-    }
+		$period = $this->getPeriod($date, $period);
+		return Piwik_SiteSearch_Archive::getDataTable(
+				'noResults', $idSite, $period, $date);
+	}
 	
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */

@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-23
+ * Modified: 2010-07-24
  */
 
 class Piwik_SiteSearch_API {
@@ -120,7 +120,7 @@ class Piwik_SiteSearch_API {
 	
 	/** Get the most popular search keywords
 	 * @return Piwik_DataTable */
-	public function getSearchKeywords($idSite, $period, $date, $noResults=false) {
+	public function getSearchKeywords($idSite, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		$period = $this->getPeriod($date, $period);
 		return Piwik_SiteSearch_Archive::getDataTable(
@@ -154,6 +154,12 @@ class Piwik_SiteSearch_API {
 	 * @return Piwik_DataTable */
 	private function getAssociatedPages($idSite, $following, $searchTerm, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
+		
+		if (!$searchTerm) {
+			$name = ($following ? 'following' : 'previous').'Pages';
+			$table = Piwik_SiteSearch_Archive::getDataTable($name, $idSite, $period, $date);
+			return $table;
+		}
 		
 		$site = $this->getSite($idSite);
 		$table = new Piwik_DataTable();

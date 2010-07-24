@@ -28,6 +28,7 @@ class Piwik_SiteSearch_Archive {
     
     /* Current archive processing variables */
 	private $idsite;
+	private $site;
 	private $startDate;
 	private $endDate;
 	
@@ -51,19 +52,19 @@ class Piwik_SiteSearch_Archive {
 		Piwik::checkUserHasViewAccess($idsite);
 		
 		$name = 'SiteSearch_'.$name;
-		$periodMap = array(
-			'Piwik_Period_Day' => 'day',
-			'Piwik_Period_Week' => 'week',
-			'Piwik_Period_Month' => 'month',
-			'Piwik_Period_Year' => 'year'
-		);
-		$period = $periodMap[get_class($period)];
+		if (!is_string($period)) {
+			$periodMap = array(
+				'Piwik_Period_Day' => 'day',
+				'Piwik_Period_Week' => 'week',
+				'Piwik_Period_Month' => 'month',
+				'Piwik_Period_Year' => 'year'
+			);
+			$period = $periodMap[get_class($period)];
+		}
 		
         $archive = Piwik_Archive::build($idsite, $period, $date);
         $dataTable = $archive->getDataTable($name);
         
-        // TODO: sort somewhere else
-		$dataTable->queueFilter('Sort', array('unique_hits', 'desc', false));
 		$dataTable->queueFilter('ReplaceColumnNames',
                 array(false, self::$indexToNameMapping));
         $dataTable->applyQueuedFilters();
@@ -76,9 +77,12 @@ class Piwik_SiteSearch_Archive {
 		$self = self::getInstance();
 		$self->archiveProcessing = $archive;
 		$self->idsite = intval($archive->idsite);
+		$self->site = Piwik_SitesManager_API::getInstance()->getSiteFromId($self->idsite);
 		$self->startDate = $archive->getStartDatetimeUTC();
 		$self->endDate = $archive->getEndDatetimeUTC();
 		$self->dayAnalyzeKeywords();
+		$self->dayAnalyzeAssociatedPages(true);
+		$self->dayAnalyzeAssociatedPages(false);
 	}
 	
 	/** Build archive for a period */
@@ -86,6 +90,8 @@ class Piwik_SiteSearch_Archive {
 		$archive->archiveDataTable(array(
 			'SiteSearch_keywords',
 			'SiteSearch_noResults',
+			'SiteSearch_followingPages',
+			'SiteSearch_previousPages'
 		));
 	}
 	
@@ -106,11 +112,10 @@ class Piwik_SiteSearch_Archive {
 	private function dayAnalyzeKeywords() {
 		$sql = '
 			SELECT
-				action.idaction,
 				action.search_term AS label,
-				action.search_results AS results,
-				COUNT(action.idaction) AS hits,
-				COUNT(DISTINCT visit.idvisit) AS unique_hits
+				action.search_results AS `'.self::INDEX_RESULTS.'`,
+				COUNT(action.idaction) AS `'.self::INDEX_SUM_HITS.'`,
+				COUNT(DISTINCT visit.idvisit) AS `'.self::INDEX_SUM_UNIQUE_HITS.'`
 			FROM
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 			LEFT JOIN
@@ -128,28 +133,82 @@ class Piwik_SiteSearch_Archive {
 				action.search_term
 		';
 
-		$result = Piwik_FetchAll($sql, $this->getSqlBindings());
-
-		$keywordsData = array();
+		$keywordsData = Piwik_FetchAll($sql, $this->getSqlBindings());
+		
 		$noResultsData = array();
-		foreach ($result as &$search) {
-			// aggregate keyword data
-			$label = $search['label'];
-			if (!isset($keywordsData[$label])) {
-				$keywordsData[$label] = $this->getNewArchiveRow($label);
-			}
-			$this->updateArchiveRow($search, $keywordsData[$label]);
-			// aggreate no results data
-			if (!$search['results']) {
-				if (!isset($noResultsData[$label])) {
-					$noResultsData[$label] = $this->getNewArchiveRow($label);
-				}
-				$this->updateArchiveRow($search, $noResultsData[$label]);
+		foreach ($keywordsData as &$search) {
+			if (!$search[self::INDEX_RESULTS]) {
+				$noResultsData[] = $search;
 			}
 		}
 		
 		$this->archiveDataArray('keywords', $keywordsData);
 		$this->archiveDataArray('noResults', $noResultsData);
+	}
+	
+	/**
+	 * Analyze pages associated with the search
+	 * following=true, searchTerm=false: all pages that were visited after a search
+	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
+	 * following=false, searchTerm=false: pages searches started from
+	 */
+	// TODO: archive by search term
+	private function dayAnalyzeAssociatedPages($following, $searchTerm=false) {
+		if ($following) {
+			// pages following a search
+			$getAction = 'idaction_url';
+			$setAction = 'idaction_url_ref';
+		} else {
+			// pages before a search
+			$getAction = 'idaction_url_ref';
+			$setAction = 'idaction_url';
+		}
+		
+		$bind = $this->getSqlBindings();
+		if ($searchTerm) {
+			// analyze one search term
+			$where = 'AND action_set.search_term = :searchTerm '
+			       . 'AND (action_get.search_term IS NULL OR '
+			       . 'action_get.search_term != :searchTerm)';
+			$bind[':searchTerm'] = $searchTerm;
+		} else {
+			// analyze all keywords
+			$where = 'AND action_set.search_term IS NOT NULL';
+		}
+		
+		$url = $this->site['main_url'];
+		if (substr($url, -1) == '/') {
+			$url = substr($url, 0, -1);
+		}
+		$bind[':url'] = $url;
+		
+		$sql = '
+			SELECT
+				REPLACE(action_get.name, :url, "") AS label,
+				COUNT(action_get.idaction) AS `'.self::INDEX_SUM_HITS.'`
+			FROM
+				'.Piwik_Common::prefixTable('log_action').' AS action_set
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
+				ON action_set.idaction = visit_action.'.$setAction.'
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action_get
+				ON action_get.idaction = visit_action.'.$getAction.'
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+				ON visit.idvisit = visit_action.idvisit
+			WHERE
+				visit.idsite = :idsite AND
+				visit_action.idaction_url_ref != 0 AND
+				(visit.visit_server_date BETWEEN :startDate AND :endDate)
+				'.$where.'
+			GROUP BY
+				action_get.idaction
+		';
+		
+		$data = Piwik_FetchAll($sql, $bind);
+		$name = ($following ? 'following' : 'previous').'Pages';
+		$this->archiveDataArray($name, $data);
 	}
 	
 	/** Build DataTable from array and archive it */
@@ -158,6 +217,7 @@ class Piwik_SiteSearch_Archive {
 		foreach ($data as &$row) {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
 			if (isset($row['label'])) {
+				// TODO: don't add metadata for tables other than keywords
 				$rowData[Piwik_DataTable_Row::METADATA] = array(
 					'search_term' => $row['label']
 				);
@@ -169,23 +229,6 @@ class Piwik_SiteSearch_Archive {
 				$dataTable->getSerialized());
 		
 		destroy($dataTable);
-	}
-	
-	/** Returns an empty row containing default values for archiving */
-	public function getNewArchiveRow($label) {
-		return array(
-			'label' => $label,
-			self::INDEX_SUM_HITS => 0,
-			self::INDEX_SUM_UNIQUE_HITS => 0,
-			self::INDEX_RESULTS => 0
-		);
-	}
-
-	/** Adds a new record to the existing archive row */
-	public function updateArchiveRow($add, &$row) {
-		$row[self::INDEX_SUM_HITS] += $add['hits'];
-		$row[self::INDEX_SUM_UNIQUE_HITS] += $add['unique_hits'];
-		$row[self::INDEX_RESULTS] = $add['results'];
 	}
 	
 }

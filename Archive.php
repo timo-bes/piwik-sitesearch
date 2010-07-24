@@ -5,25 +5,25 @@
  * Archive
  *
  * Author:   Timo Besenreuther
- *		   EZdesign.de
+ *           EZdesign.de
  * Created:  2010-07-23
- * Modified: 2010-07-23
+ * Modified: 2010-07-24
  */
 
 class Piwik_SiteSearch_Archive {
 	
 	/* Archive indexes */
-    const INDEX_SEARCH_TERM = 0;
-    const INDEX_SUM_HITS = 1;
-    const INDEX_SUM_UNIQUE_HITS = 2;
-    const INDEX_RESULTS = 3;
+    const INDEX_SUM_HITS = 2;
+    const INDEX_SUM_UNIQUE_HITS = 3;
+    // 4 corresponds to Piwik_Archive::INDEX_MAX_ACTIONS and will therefore
+    // not be summed but maximized (and every row has the same value).
+    const INDEX_RESULTS = 4;
     
     /** Archive index to property name mapping */
     public static $indexToNameMapping = array(
 		self::INDEX_SUM_HITS => 'hits',
         self::INDEX_SUM_UNIQUE_HITS => 'unique_hits',
-        self::INDEX_RESULTS => 'results',
-        self::INDEX_SEARCH_TERM => 'label'
+        self::INDEX_RESULTS => 'results'
     );
     
     /* Current archive processing variables */
@@ -157,9 +157,9 @@ class Piwik_SiteSearch_Archive {
 		$dataTable = new Piwik_DataTable();
 		foreach ($data as &$row) {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
-			if (isset($row[self::INDEX_SEARCH_TERM])) {
+			if (isset($row['label'])) {
 				$rowData[Piwik_DataTable_Row::METADATA] = array(
-					'search_term' => $row[self::INDEX_SEARCH_TERM]
+					'search_term' => $row['label']
 				);
 			}
 			$dataTable->addRow(new Piwik_DataTable_Row($rowData));
@@ -172,9 +172,9 @@ class Piwik_SiteSearch_Archive {
 	}
 	
 	/** Returns an empty row containing default values for archiving */
-	public function getNewArchiveRow($searchTerm) {
+	public function getNewArchiveRow($label) {
 		return array(
-			self::INDEX_SEARCH_TERM => $searchTerm,
+			'label' => $label,
 			self::INDEX_SUM_HITS => 0,
 			self::INDEX_SUM_UNIQUE_HITS => 0,
 			self::INDEX_RESULTS => 0

@@ -77,8 +77,6 @@ class Piwik_SiteSearch_Archive {
 			$period = $periodMap[get_class($period)];
 		}
 		
-		self::log("getDataTable: $idsite, $period, $date, $name");
-		
 		$archive = Piwik_Archive::build($idsite, $period, $date);
 		$dataTable = $archive->getDataTable($name);
 		$dataTable->queueFilter('ReplaceColumnNames',

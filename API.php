@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-24
+ * Modified: 2010-07-25
  */
 
 class Piwik_SiteSearch_API {
@@ -139,102 +139,32 @@ class Piwik_SiteSearch_API {
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
 	public function getFollowingPages($idSite, $period, $date) {
-		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
-		return $this->getAssociatedPages($idSite, true, $searchTerm, $period, $date);
+		return $this->getAssociatedPages($idSite, true, $period, $date);
 	}
 	
 	/** Get the next sites before keyword was searched
 	 * @return Piwik_DataTable */
 	public function getPreviousPages($idSite, $period, $date) {
-		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
-		return $this->getAssociatedPages($idSite, false, $searchTerm, $period, $date);
+		return $this->getAssociatedPages($idSite, false, $period, $date);
 	}
 	
 	/** Get table containing informatino about associated pages
 	 * @return Piwik_DataTable */
-	private function getAssociatedPages($idSite, $following, $searchTerm, $period, $date) {
+	private function getAssociatedPages($idSite, $following, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
 		
+		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		$dataTableId = intval(Piwik_Common::getRequestVar('dataTable', 0));
+		
+		$name = ($following ? 'following' : 'previous').'Pages';
 		if (!$searchTerm) {
-			$name = ($following ? 'following' : 'previous').'Pages';
-			$table = Piwik_SiteSearch_Archive::getDataTable($name, $idSite, $period, $date);
-			return $table;
-		}
-		
-		$site = $this->getSite($idSite);
-		$table = new Piwik_DataTable();
-		$period = $this->getPeriod($date, $period);
-		$searchViews = $this->loadAssociatedPages($site, $following, $searchTerm, $period);
-		
-		foreach ($searchViews as &$searchView) {
-			$table->addRow(new Piwik_DataTable_Row(array(
-				Piwik_DataTable_Row::COLUMNS => $searchView
-			)));
-		}
-		
-		return $table;
-	}
-	
-	/**
-	 * Get information about pages associated with the search
-	 * following=true, searchTerm=false: all pages that were visited after a search
-	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
-	 * following=false, searchTerm=false: pages searches started from
-	 */
-	private function loadAssociatedPages($site, $following, $searchTerm, Piwik_Period $period) {
-		if ($following) {
-			// pages following a search
-			$getAction = 'idaction_url';
-			$setAction = 'idaction_url_ref';
+			return Piwik_SiteSearch_Archive::getDataTable($name, $idSite, $period, $date);
+		} else if (!$dataTableId) {
+			return null;
 		} else {
-			// pages before a search
-			$getAction = 'idaction_url_ref';
-			$setAction = 'idaction_url';
+			$name .= '_'.$dataTableId;
+			return Piwik_SiteSearch_Archive::getDataTable($name, $idSite, $period, $date);
 		}
-		
-		$bind = array();
-		if ($searchTerm) {
-			// analyze one search term
-			$where = 'AND action_set.search_term = :searchTerm '
-			       . 'AND (action_get.search_term IS NULL OR '
-			       . 'action_get.search_term != :searchTerm)';
-			$bind[':searchTerm'] = $searchTerm;
-		} else {
-			// analyze all keywords
-			$where = 'AND action_set.search_term IS NOT NULL';
-		}
-		
-		$url = $site['main_url'];
-		if (substr($url, -1) == '/') {
-			$url = substr($url, 0, -1);
-		}
-		$bind[':url'] = $url;
-		
-		$sql = '
-			SELECT
-				action_get.idaction,
-				REPLACE(action_get.name, :url, "") AS label,
-				COUNT(action_get.idaction) AS hits
-			FROM
-				'.Piwik_Common::prefixTable('log_action').' AS action_set
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
-				ON action_set.idaction = visit_action.'.$setAction.'
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_action').' AS action_get
-				ON action_get.idaction = visit_action.'.$getAction.'
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_visit').' AS visit
-				ON visit.idvisit = visit_action.idvisit
-			WHERE
-				visit.idsite = '.intval($site['idsite']).' AND
-				visit_action.idaction_url_ref != 0 AND
-				(visit.visit_server_date BETWEEN "'.$period->getDateStart().'" AND "'.$period->getDateEnd().'")
-				'.$where.'
-			GROUP BY
-				action_get.idaction
-		';
-		return Piwik_FetchAll($sql, $bind);
 	}
 
     /** Get search refinements

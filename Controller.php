@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-22
+ * Modified: 2010-07-25
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -91,12 +91,15 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$searchTerm = Piwik_Common::getRequestVar('search_term', '');
 		if ($searchTerm == '') exit;
 		
+		$dataTableId = Piwik_Common::getRequestVar('dataTable', false);
+		if (!$dataTableId) exit;
+		
 		$following = Piwik_Common::getRequestVar('following', true) ? true : false;
-		echo $this->getPagesTable($searchTerm, $following);
+		echo $this->getPagesTable($searchTerm, $following, $dataTableId);
 	}
 	
 	/** Get the pages for a keyword helper */
-	private function getPagesTable($searchTerm, $following) {
+	private function getPagesTable($searchTerm, $following, $dataTableId=0) {
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
 		$view->keyword = $searchTerm;
 		$view->period = $this->range->getLocalizedLongString();
@@ -106,6 +109,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
 		$viewDataTable->init($this->pluginName, $id, $method);
 		$viewDataTable->setRequestParameter('search_term', $searchTerm);
+		$viewDataTable->setRequestParameter('dataTable', $dataTableId);
 		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Page'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
 		$viewDataTable->setSortedColumn('hits', 'desc');

@@ -8,11 +8,19 @@ function SiteSearch_ManipulateTable(selector) {
 		$(this).find('td').css('color', '');
 	})
 	.click(function() {
-		var term = $(this).attr('searchterm');
+		var $this = $(this);
+		var term = $this.attr('searchterm');
 		var request = function(method, followingVal, divId) {
 			$('#'+divId).html('<div id="loadingPiwik">'
 					+ '<img alt="" src="themes/default/images/loading-blue.gif"> '
 					+ 'Loading data... </div>');
+			
+			if (method == 'pages') {
+				var attr = 'datatable_' + (followingVal ? 'following' : 'previous');
+				var dataTableId = $this.attr(attr);
+			} else {
+				var dataTableId = false;
+			}
 			
 			$.post('index.php', {
 				module: 'SiteSearch',
@@ -21,7 +29,8 @@ function SiteSearch_ManipulateTable(selector) {
 				idSite: piwik.idSite,
 				period: piwik.period,
 				date: piwik.currentDateString,
-				following: followingVal
+				following: followingVal,
+				dataTable: dataTableId
 			}, function(response){
 				$('#'+divId).html(response);
 			});

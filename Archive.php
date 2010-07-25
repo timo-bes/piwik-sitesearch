@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-23
- * Modified: 2010-07-24
+ * Modified: 2010-07-25
  */
 
 class Piwik_SiteSearch_Archive {
@@ -29,12 +29,16 @@ class Piwik_SiteSearch_Archive {
     /* Current archive processing variables */
 	private $idsite;
 	private $site;
+	private $period;
 	private $startDate;
 	private $endDate;
 	
 	/** Current archive processing object
 	 * @var Piwik_ArchiveProcessing */
 	private $archiveProcessing;
+	
+	/** State for period archiving */
+	private static $periodArchivingState = 0;
 	
 	private static $instance;
 	/** Get singleton instance
@@ -44,6 +48,17 @@ class Piwik_SiteSearch_Archive {
 			self::$instance = new self;
 		}
 		return self::$instance;
+	}
+	
+	/** Simple file logger */
+	public static function log($message) {
+		if (is_array($message)) {
+			$message = print_r($message, true);
+		}
+		$log = './tmp/log';
+		$fh = fopen($log, 'a') or die('Can\'t open log file');
+		fwrite($fh, $message."\n\n");
+		fclose($fh);
 	}
 	
 	/** Get data table from archive
@@ -62,9 +77,10 @@ class Piwik_SiteSearch_Archive {
 			$period = $periodMap[get_class($period)];
 		}
 		
-        $archive = Piwik_Archive::build($idsite, $period, $date);
-        $dataTable = $archive->getDataTable($name);
-        
+		self::log("getDataTable: $idsite, $period, $date, $name");
+		
+		$archive = Piwik_Archive::build($idsite, $period, $date);
+		$dataTable = $archive->getDataTable($name);
 		$dataTable->queueFilter('ReplaceColumnNames',
                 array(false, self::$indexToNameMapping));
         $dataTable->applyQueuedFilters();
@@ -75,11 +91,7 @@ class Piwik_SiteSearch_Archive {
 	/** Build archive for a single day */
 	public static function archiveDay(Piwik_ArchiveProcessing $archive) {
 		$self = self::getInstance();
-		$self->archiveProcessing = $archive;
-		$self->idsite = intval($archive->idsite);
-		$self->site = Piwik_SitesManager_API::getInstance()->getSiteFromId($self->idsite);
-		$self->startDate = $archive->getStartDatetimeUTC();
-		$self->endDate = $archive->getEndDatetimeUTC();
+		$self->extractArchiveProcessing($archive);
 		$self->dayAnalyzeKeywords();
 		$self->dayAnalyzeAssociatedPages(true);
 		$self->dayAnalyzeAssociatedPages(false);
@@ -87,12 +99,50 @@ class Piwik_SiteSearch_Archive {
 	
 	/** Build archive for a period */
 	public static function archivePeriod(Piwik_ArchiveProcessing $archive) {
+		// make sure, period is only archived once
+		if (self::$periodArchivingState == 1) return;
+		self::$periodArchivingState = 1;
+		
+		$self = self::getInstance();
+		$self->extractArchiveProcessing($archive);
+		
+		// archive the main tables
 		$archive->archiveDataTable(array(
 			'SiteSearch_keywords',
 			'SiteSearch_noResults',
 			'SiteSearch_followingPages',
 			'SiteSearch_previousPages'
 		));
+		
+		$dateStart = $self->period->getDateStart()->getTimestamp();
+		$tableName = 'archive_blob_'.date('Y_m');
+		
+		$sql = '
+			SELECT
+				name
+			FROM
+				'.Piwik_Common::prefixTable($tableName).' AS visit
+			WHERE
+				name LIKE "SiteSearch_followingPages_%" OR
+				name LIKE "SiteSearch_previousPages_%"
+			GROUP BY
+				name
+		';
+		
+		$tables = Piwik_FetchAll($sql);
+		foreach ($tables AS $table) {
+			$archive->archiveDataTable($table['name']);
+		}
+	}
+	
+	/** Extract values from ArchiveProcessing */
+	private function extractArchiveProcessing(Piwik_ArchiveProcessing $archive) {
+		$this->archiveProcessing = $archive;
+		$this->idsite = intval($archive->idsite);
+		$this->site = Piwik_SitesManager_API::getInstance()->getSiteFromId($this->idsite);
+		$this->period = $archive->period;
+		$this->startDate = $archive->getStartDatetimeUTC();
+		$this->endDate = $archive->getEndDatetimeUTC();
 	}
 	
 	/** Get basic sql bindings */
@@ -142,8 +192,18 @@ class Piwik_SiteSearch_Archive {
 			}
 		}
 		
-		$this->archiveDataArray('keywords', $keywordsData);
+		$this->archiveDataArray('keywords', $keywordsData, true);
 		$this->archiveDataArray('noResults', $noResultsData);
+	}
+	
+	/** Aggregate metadata for keyword rows */
+	private function getKeywordsMetadata(&$row) {
+		$term = $row['label'];
+		return array(
+			'search_term' => $term,
+			'datatable_following' => $this->dayAnalyzeAssociatedPages(true, $term),
+			'datatable_previous' => $this->dayAnalyzeAssociatedPages(false, $term)
+		);
 	}
 	
 	/**
@@ -152,7 +212,6 @@ class Piwik_SiteSearch_Archive {
 	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
 	 * following=false, searchTerm=false: pages searches started from
 	 */
-	// TODO: archive by search term
 	private function dayAnalyzeAssociatedPages($following, $searchTerm=false) {
 		if ($following) {
 			// pages following a search
@@ -208,27 +267,38 @@ class Piwik_SiteSearch_Archive {
 		
 		$data = Piwik_FetchAll($sql, $bind);
 		$name = ($following ? 'following' : 'previous').'Pages';
-		$this->archiveDataArray($name, $data);
+		$isSubTable = $searchTerm ? true : false;
+		return $this->archiveDataArray($name, $data, false, $isSubTable);
 	}
 	
-	/** Build DataTable from array and archive it */
-	private function archiveDataArray($keyword, &$data) {
+	/**
+	 * Build DataTable from array and archive it
+	 * If isSubTable is set, the datatable will be stored under SiteSearch_keyword_id
+	 * @return id of the datatable
+	 */
+	private function archiveDataArray($keyword, &$data, $keywordsCallback=false,
+			$isSubTable=false) {
+		
 		$dataTable = new Piwik_DataTable();
 		foreach ($data as &$row) {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
-			if (isset($row['label'])) {
-				// TODO: don't add metadata for tables other than keywords
-				$rowData[Piwik_DataTable_Row::METADATA] = array(
-					'search_term' => $row['label']
-				);
+			if ($keywordsCallback) {
+				$rowData[Piwik_DataTable_Row::METADATA] =
+						$this->getKeywordsMetadata($row);
 			}
 			$dataTable->addRow(new Piwik_DataTable_Row($rowData));
 		}
 		
-		$this->archiveProcessing->insertBlobRecord('SiteSearch_'.$keyword,
-				$dataTable->getSerialized());
+		$id = $dataTable->getId();
+		$name = 'SiteSearch_'.$keyword;
+		if ($isSubTable) {
+			$name .= '_'.$id;
+		}
 		
+		$this->archiveProcessing->insertBlobRecord($name, $dataTable->getSerialized());
 		destroy($dataTable);
+		
+		return $id;
 	}
 	
 }

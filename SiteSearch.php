@@ -56,6 +56,17 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		Zend_Registry::get('db')->query($query);
 	}
 	
+	/** Simple file logger */
+	public static function log($message) {
+		if (is_array($message)) {
+			$message = print_r($message, true);
+		}
+		$log = './plugins/SiteSearch/dev/log';
+		$fh = fopen($log, 'a') or die('Can\'t open log file');
+		fwrite($fh, $message."\n\n");
+		fclose($fh);
+	}
+	
 	/** Register Hooks */
 	public function getListHooksRegistered() {
         $hooks = array(

@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-23
- * Modified: 2010-07-25
+ * Modified: 2010-08-28
  */
 
 class Piwik_SiteSearch_Archive {
@@ -48,17 +48,6 @@ class Piwik_SiteSearch_Archive {
 			self::$instance = new self;
 		}
 		return self::$instance;
-	}
-	
-	/** Simple file logger */
-	public static function log($message) {
-		if (is_array($message)) {
-			$message = print_r($message, true);
-		}
-		$log = './tmp/log';
-		$fh = fopen($log, 'a') or die('Can\'t open log file');
-		fwrite($fh, $message."\n\n");
-		fclose($fh);
 	}
 	
 	/** Get data table from archive

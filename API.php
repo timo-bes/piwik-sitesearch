@@ -12,8 +12,8 @@
 
 class Piwik_SiteSearch_API {
 	
-	// remember idaction for filtering associated pages
-	private $idaction;
+	// remember idSearch for filtering associated pages
+	private $idSearch;
 	
 	// singleton instance
 	static private $instance = null;
@@ -158,27 +158,28 @@ class Piwik_SiteSearch_API {
 	 * @return Piwik_DataTable */
 	private function getAssociatedPages($idSite, $following, $period, $date) {
 		Piwik::checkUserHasViewAccess($idSite);
-		$this->idaction = intval(Piwik_Common::getRequestVar('idaction', 0));
+		$this->idSearch = intval(Piwik_Common::getRequestVar('idSearch', 0));
 		$name = ($following ? 'following' : 'previous').'Pages';
 		
 		$dataTable = Piwik_SiteSearch_Archive
 						::getDataTable($name, $idSite, $period, $date);
-		if (!$this->idaction) {
+		
+		if (!$this->idSearch) {
 			return $dataTable;
 		}
 		
 		// filter data table for the right keyword (idaction)
 		$dataTable->filter('ColumnCallbackDeleteRow', array(
-			'idaction',
+			'id_search',
 			array($this, 'filterAssociatedPages')
 		));
 		
 		return $dataTable;
 	}
 	
-	/** Filter associated pages: remove all that do not match the current idaction */
-	public function filterAssociatedPages($idaction) {
-		return $idaction == $this->idaction;
+	/** Filter associated pages: remove all that do not match the current search */
+	public function filterAssociatedPages($idSearch) {
+		return $idSearch == $this->idSearch;
 	}
 
     /** Get search refinements

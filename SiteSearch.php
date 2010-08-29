@@ -29,7 +29,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		        . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
 		        . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
 		$query2 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
-		        . 'ADD `search_term` INTEGER NULL';
+		        . 'ADD `search_term` INTEGER NULL DEFAULT NULL';
 		$query3 = 'ADD INDEX `search_term` (`search_term`)';
 		$query4 = 'CREATE TABLE `'.Piwik_Common::prefixTable('log_sitesearch').'` ( '
 		        . '`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '

@@ -22,11 +22,8 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function index() {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
 		$view->evolution = $this->evolution(true);
-		$view->keywords = $this->keywords(true);
+		$view->keywords = $this->keywords();
 		$view->noResults = $this->noResults();
-		$view->followingPages = '';
-		$view->previousPages = '';
-        $view->refinements = '';
 		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
 		echo $view->render();
 	}
@@ -54,7 +51,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	}
 	
 	/** Keywords overview */
-	public function keywords($return=false) {
+	private function keywords() {
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
 		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'unique_hits', 'results'));
@@ -66,11 +63,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$viewDataTable->disableFooterIcons();
 		$viewDataTable->setLimit(20);
 		$viewDataTable->setTemplate('SiteSearch/templates/datatable.tpl');
-		$result = $this->renderView($viewDataTable, true);
-		if ($return) {
-			return $result;
-		}
-		echo $result;
+		return $this->renderView($viewDataTable, true);
 	}
 	
 	/** Find searches without results */
@@ -91,11 +84,11 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$searchTerm = Piwik_Common::getRequestVar('search_term', '');
 		if ($searchTerm == '') exit;
 		
-		$idaction = Piwik_Common::getRequestVar('idaction', false);
-		if (!$idaction) exit;
+		$idSerach = Piwik_Common::getRequestVar('idSearch', false);
+		if (!$idSerach) exit;
 		
 		$following = Piwik_Common::getRequestVar('following', true) ? true : false;
-		echo $this->getPagesTable($searchTerm, $following, $idaction);
+		echo $this->getPagesTable($searchTerm, $following, $idSerach);
 	}
 	
 	/** Get the pages for a keyword helper */

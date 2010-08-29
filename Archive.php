@@ -200,9 +200,9 @@ class Piwik_SiteSearch_Archive {
 	private function dayAnalyzeKeywords() {
 		$sql = '
 			SELECT
-				action.idaction,
-				action.search_term AS label,
-				action.search_results AS `'.self::INDEX_RESULTS.'`,
+				search.id AS id_search,
+				search.search_term AS label,
+				search.results AS `'.self::INDEX_RESULTS.'`,
 				COUNT(action.idaction) AS `'.self::INDEX_SUM_HITS.'`,
 				COUNT(DISTINCT visit.idvisit) AS `'.self::INDEX_SUM_UNIQUE_HITS.'`
 			FROM
@@ -213,13 +213,15 @@ class Piwik_SiteSearch_Archive {
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_action').' AS action
 				ON action.idaction = visit_action.idaction_url
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_sitesearch').' AS search
+				ON action.search_term = search.id
 			WHERE
 				visit.idsite = :idsite AND
-				action.type = 1 AND
 				action.search_term IS NOT NULL AND
 				(visit_first_action_time BETWEEN :startDate AND :endDate)
 			GROUP BY
-				action.search_term
+				search.id
 		';
 		
 		$keywordsData = Piwik_FetchAll($sql, $this->getSqlBindings());
@@ -255,8 +257,8 @@ class Piwik_SiteSearch_Archive {
 		
 		$sql = '
 			SELECT
-				CONCAT(action_set.idaction, "_", action_get.idaction) AS label,
-				action_set.idaction,
+				CONCAT(search.id, "_", action_get.idaction) AS label,
+				search.id AS id_search,
 				REPLACE(action_get.name, :url, "") AS page,
 				COUNT(action_get.idaction) AS `'.self::INDEX_SUM_HITS.'`
 			FROM
@@ -270,6 +272,9 @@ class Piwik_SiteSearch_Archive {
 			LEFT JOIN
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 				ON visit.idvisit = visit_action.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_sitesearch').' AS search
+				ON action_set.search_term = search.id
 			WHERE
 				visit.idsite = :idsite AND
 				visit_action.idaction_url_ref != 0 AND
@@ -277,8 +282,8 @@ class Piwik_SiteSearch_Archive {
 			    action_get.search_term IS NULL AND
 				(visit.visit_server_date BETWEEN :startDate AND :endDate)
 			GROUP BY
-				action_get.idaction,
-				action_set.idaction
+				search.id,
+				action_get.idaction
 		';
 		
 		$data = Piwik_FetchAll($sql, $bind);
@@ -297,7 +302,7 @@ class Piwik_SiteSearch_Archive {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
 			if ($addSearchTermMetaData) {
 				$rowData[Piwik_DataTable_Row::METADATA] = array(
-					'idaction' => $row['idaction'],
+					'id_search' => $row['id_search'],
 					'search_term' => $row['label']
 				);
 			}

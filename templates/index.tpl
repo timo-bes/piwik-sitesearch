@@ -14,20 +14,16 @@
 	</div>
 	
 	<div id="sitesearch_hide" style="display:none">
+		
 		<h2>Following Pages</h2>
-		<div id="sitesearch_following_pages" style="margin-bottom: 25px">
-			{$followingPages}
-		</div>
+		<div id="sitesearch_following_pages" style="margin-bottom: 25px"></div>
 		
 		<h2>Previous Pages</h2>
-		<div id="sitesearch_previous_pages">
-			{$previousPages}
-		</div>
+		<div id="sitesearch_previous_pages"></div>
 	
 	    <h2>Refinements</h2>
-	    <div id="sitesearch_refinements">
-			{$refinements}
-		</div>
+	    <div id="sitesearch_refinements"></div>
+		
 	</div>
 	
 </div>

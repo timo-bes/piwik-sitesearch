@@ -23,7 +23,7 @@ function SiteSearch_ManipulateTable(selector) {
 				period: piwik.period,
 				date: piwik.currentDateString,
 				following: followingVal,
-				idaction: $this.attr('idaction')
+				idSearch: $this.attr('id_search')
 			}, function(response){
 				$('#'+divId).html(response);
 			});

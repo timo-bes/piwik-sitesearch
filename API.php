@@ -64,11 +64,12 @@ class Piwik_SiteSearch_API {
 				'unique_hits' => 'visitsWithSearches',
 				'label' => 'labelHidden'
 			)));
+					
+		
 			$this->idSearch = Piwik_Common::getRequestVar('idSearch', false);
 			$dataTable->queueFilter('ColumnCallbackDeleteRow',
 					array('id_search', array($this, 'filterAssociatedPages')));
 			$dataTable->applyQueuedFilters();
-			Piwik_SiteSearch::log(print_r($dataTable, true));
 		}
 		
 		return $dataTable;

@@ -15,7 +15,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function __construct() {
 		parent::__construct();
 		$this->period = Piwik_Common::getRequestVar("period");
-		$this->range = Piwik_Period_Range::factory($this->period, $this->date);
+		if (isset($this->date)) {
+			$this->range = Piwik_Period_Range::factory($this->period, $this->date);
+		}
 	}
 	
 	/** The plugin index */
@@ -31,18 +33,28 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	/** Search evolution */
 	public function evolution($return=false) {
 		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
-		$graph = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
-		$graph->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchEvolution');
-		$graph->setColumnTranslation('visitsWithSearches', 'Visits with Searches');
-		$graph->setColumnTranslation('totalSearches', 'Total Searches');
-		
-		if ($searchTerm) {
-			$graph->setFooterMessage('Keyword: '.htmlentities($searchTerm));
-			$graph->setRequestParameter('search_term', $searchTerm);
+		$view = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
+		$view->init($this->pluginName, __FUNCTION__, 'SiteSearch.getSearchEvolution');
+		if (!is_null($this->date)) {
+			$view->setParametersToModify(
+					$this->getGraphParamsModified(array('date' => $this->strDate)));
 		}
 		
-		$result = $this->renderView($graph, true);
+		$view->setColumnTranslation('visitsWithSearches', Piwik_Translate('SiteSearch_VisitsWithSearches'));
+		$view->setColumnTranslation('totalSearches', Piwik_Translate('SiteSearch_TotalSearches'));
+		$view->setColumnsToDisplay(array(
+			'totalSearches',
+			'visitsWithSearches'
+		));
+		
+		if ($searchTerm) {
+			$view->setFooterMessage('Keyword: '.htmlentities($searchTerm));
+			$view->setRequestParameter('idSearch', $idSearch);
+		}
+		
+		$result = $this->renderView($view, true);
 		
 		if ($return) {
 			return $result;

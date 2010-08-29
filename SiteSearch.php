@@ -77,6 +77,10 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			$message = print_r($message, true);
 		}
 		$log = './plugins/SiteSearch/dev/log';
+		if (!file_exists($log)) {
+			// for cronjob
+			$log = '../../plugins/SiteSearch/dev/log';
+		}
 		$fh = fopen($log, 'a') or die('Can\'t open log file');
 		fwrite($fh, $message."\n\n");
 		fclose($fh);

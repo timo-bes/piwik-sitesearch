@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-22
+ * Modified: 2010-09-29
  */
 
 $translations = array(
@@ -28,7 +28,9 @@ $translations = array(
 	'SiteSearch_Hits' => 'Hits',
 	'SiteSearch_UniqueHits' => 'Unique Hits',
 	'SiteSearch_Results' => 'Results',
-	'SiteSearch_Page' => 'Page'
+	'SiteSearch_Page' => 'Page',
+	'SiteSearch_VisitsWithSearches' => 'Visits with Searches',
+	'SiteSearch_TotalSearches' => 'Total Searches'
 );
 
 ?>

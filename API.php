@@ -44,83 +44,33 @@ class Piwik_SiteSearch_API {
 	}
 	
 	/** Get evolution of search
-	 * @return Piwik_DataTable*/
+	 * @return Piwik_DataTable */
 	public function getSearchEvolution($idSite, $period, $date) {
-		// TODO: archive
+		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
-		switch ($period) {
-		case 'year':
-			$period = 'month';
-			break;
-		case 'month':
-			$period = 'week';
-			break;
-		case 'week':
-			$period = 'day';
-			break;
-		case 'day':
-		default:
-			break;
+		if (!$idSearch) {
+			// render a overview of all keywords
+			// data is taken from numeric archive
+			$dataTable = Piwik_SiteSearch_Archive::getDataTable(
+					array('totalSearches', 'visitsWithSearches'), $idSite, $period,
+					$date, true);
+		} else {
+			// render overview for only one keyword
+			// data is taken from general keyword blob archive
+			$dataTable = Piwik_SiteSearch_Archive::getDataTable(
+				'keywords', $idSite, $period, $date);
+			$dataTable->queueFilter('ReplaceColumnNames', array(false, array(
+				'hits' => 'totalSearches',
+				'unique_hits' => 'visitsWithSearches',
+				'label' => 'labelHidden'
+			)));
+			$this->idSearch = Piwik_Common::getRequestVar('idSearch', false);
+			$dataTable->queueFilter('ColumnCallbackDeleteRow',
+					array('id_search', array($this, 'filterAssociatedPages')));
+			$dataTable->applyQueuedFilters();
+			Piwik_SiteSearch::log(print_r($dataTable, true));
 		}
 		
-		$period = new Piwik_Period_Range($period, 'last12');
-		$dateStart = $period->getDateStart()->toString();
-		$dateEnd = $period->getDateEnd()->toString();
-		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
-		
-		$where = '';
-		$bind = array();
-		if ($searchTerm) {
-			$where = 'AND action.search_term = :searchTerm';
-			$bind[':searchTerm'] = $searchTerm;
-		}
-		
-		// TODO: exclude multiple result pages from totalSearches
-		// check, whether previous action had the same keyword
-		$query = '
-			SELECT
-				visit.visit_server_date AS date,
-				COUNT(action.idaction) AS searches,
-				COUNT(DISTINCT visit.idvisit) AS visits
-			FROM
-				'.Piwik_Common::prefixTable('log_visit').' AS visit
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
-				ON visit.idvisit = visit_action.idvisit
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_action').' AS action
-				ON action.idaction = visit_action.idaction_url
-			WHERE
-				visit.idsite = '.intval($idSite).' AND
-				action.type = 1 AND
-				action.search_term IS NOT NULL AND
-				(visit.visit_server_date BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'")
-				'.$where.'
-			GROUP BY
-				visit.visit_server_date
-		';
-		$result = Piwik_FetchAll($query, $bind);
-		
-		$dataTable = new Piwik_DataTable();
-		$data = array();
-		$i = 0;
-		foreach ($period->getSubperiods() as $subPeriod) {
-			$dateStart = $subPeriod->getDateStart();
-			$dateEnd = $subPeriod->getDateEnd();
-			$visits = 0;
-			$searches = 0;
-			while (isset($result[$i]) && $result[$i]['date'] <= $dateEnd) {
-				$visits += $result[$i]['visits'];
-				$searches += $result[$i]['searches'];
-				$i++;
-			}
-			$data[$subPeriod->getLocalizedShortString()] = array(
-				'visitsWithSearches' => $visits,
-				'totalSearches' => $searches
-			);
-		}
-		
-		$dataTable->addRowsFromArrayWithIndexLabel($data);
 		return $dataTable;
 	}
 	

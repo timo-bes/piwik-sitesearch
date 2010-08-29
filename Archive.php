@@ -49,11 +49,18 @@ class Piwik_SiteSearch_Archive {
 	
 	/** Get data table from archive
      * @return Piwik_DataTable */
-    public static function getDataTable($name, $idsite, $period, $date) {
-		Piwik::checkUserHasViewAccess($idsite);
+    public static function getDataTable($name, $idsite, $period, $date, $numeric=false) {
+    	Piwik::checkUserHasViewAccess($idsite);
 		
-		$name = 'SiteSearch_'.$name;
-		if (!is_string($period)) {
+    	if (is_array($name)) {
+    		foreach ($name as &$col) {
+    			$col = 'SiteSearch_'.$col;
+    		}
+    	} else {
+    		$name = 'SiteSearch_'.$name;
+    	}
+    	
+		if (!is_string($period) && get_class($period) != 'Piwik_Period_Range') {
 			$periodMap = array(
 				'Piwik_Period_Day' => 'day',
 				'Piwik_Period_Week' => 'week',
@@ -64,10 +71,19 @@ class Piwik_SiteSearch_Archive {
 		}
 		
 		$archive = Piwik_Archive::build($idsite, $period, $date);
-		$dataTable = $archive->getDataTable($name);
-		$dataTable->queueFilter('ReplaceColumnNames',
-                array(false, self::$indexToNameMapping));
-        $dataTable->applyQueuedFilters();
+		if ($numeric) {
+			$dataTable = $archive->getDataTableFromNumeric($name);
+			$dataTable->queueFilter('ReplaceColumnNames', array(false, array(
+				'SiteSearch_totalSearches' => 'totalSearches',
+				'SiteSearch_visitsWithSearches' => 'visitsWithSearches'
+			)));
+            $dataTable->applyQueuedFilters();
+		} else {
+			$dataTable = $archive->getDataTable($name);
+			$dataTable->queueFilter('ReplaceColumnNames',
+					array(false, self::$indexToNameMapping));
+            $dataTable->applyQueuedFilters();
+		}
 
 		return $dataTable;
     }
@@ -146,12 +162,16 @@ class Piwik_SiteSearch_Archive {
 			return;
 		}
 		
-		// archive the main tables
 		$archive->archiveDataTable(array(
 			'SiteSearch_keywords',
 			'SiteSearch_noResults',
 			'SiteSearch_followingPages',
 			'SiteSearch_previousPages'
+		));
+		
+		$archive->archiveNumericValuesSum(array(
+			'SiteSearch_totalSearches',
+			'SiteSearch_visitsWithSearches'
 		));
 	}
 	
@@ -189,7 +209,29 @@ class Piwik_SiteSearch_Archive {
 	 * - number of total searches
 	 */
 	private function dayAnalyzeNumberOfSearches() {
+		$query = '
+			SELECT
+				COUNT(action.idaction) AS searches,
+				COUNT(DISTINCT visit.idvisit) AS visits
+			FROM
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action
+				ON visit.idvisit = visit_action.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action
+				ON action.idaction = visit_action.idaction_url
+			WHERE
+				visit.idsite = :idsite AND
+				action.search_term IS NOT NULL AND
+				(visit_first_action_time BETWEEN :startDate AND :endDate)
+		';
+		$result = Piwik_FetchRow($query, $this->getSqlBindings());
 		
+		$this->archiveProcessing->insertNumericRecord(
+				'SiteSearch_totalSearches', $result['searches']);
+		$this->archiveProcessing->insertNumericRecord(
+				'SiteSearch_visitsWithSearches', $result['visits']);
 	}
 	
 	/**

@@ -6,7 +6,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-22
+ * Modified: 2010-08-29
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
@@ -65,6 +65,17 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		$fh = fopen($log, 'a') or die('Can\'t open log file');
 		fwrite($fh, $message."\n\n");
 		fclose($fh);
+	}
+	
+	/** Log sql queries  */
+	public static function logSql($sql, $bindings) {
+		foreach ($bindings as &$value) {
+			if (is_string($value)) {
+				$value = '"'.$value.'"';
+			}
+		}
+		$sql = str_replace(array_keys($bindings), array_values($bindings), $sql);
+		self::log($sql);
 	}
 	
 	/** Register Hooks */
@@ -149,7 +160,8 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 						SET search_term = :searchTerm
 						WHERE idaction = '.intval($idaction).'
 					';
-					Piwik_Query($sql, array(':searchTerm' => urldecode($match[1])));
+					Piwik_Query($sql, array(':searchTerm'
+							=> strtolower(urldecode($match[1]))));
 				}
 			}
 		}

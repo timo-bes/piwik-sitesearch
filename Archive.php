@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-23
- * Modified: 2010-08-28
+ * Modified: 2010-08-29
  */
 
 class Piwik_SiteSearch_Archive {
@@ -36,9 +36,6 @@ class Piwik_SiteSearch_Archive {
 	/** Current archive processing object
 	 * @var Piwik_ArchiveProcessing */
 	private $archiveProcessing;
-	
-	/** State for period archiving */
-	private static $periodArchivingState = 0;
 	
 	private static $instance;
 	/** Get singleton instance
@@ -86,10 +83,6 @@ class Piwik_SiteSearch_Archive {
 	
 	/** Build archive for a period */
 	public static function archivePeriod(Piwik_ArchiveProcessing $archive) {
-		// make sure, period is only archived once
-		if (self::$periodArchivingState == 1) return;
-		self::$periodArchivingState = 1;
-		
 		$self = self::getInstance();
 		$self->extractArchiveProcessing($archive);
 		
@@ -102,7 +95,7 @@ class Piwik_SiteSearch_Archive {
 		));
 		
 		$dateStart = $self->period->getDateStart()->getTimestamp();
-		$tableName = 'archive_blob_'.date('Y_m');
+		$tableName = 'archive_blob_'.date('Y_m', $dateStart);
 		
 		$sql = '
 			SELECT
@@ -141,6 +134,15 @@ class Piwik_SiteSearch_Archive {
 		);
 	}
 	
+	/** Get base URL of site */
+	private function getSiteUrlBase() {
+		$url = $this->site['main_url'];
+		if (substr($url, -1) == '/') {
+			$url = substr($url, 0, -1);
+		}
+		return $url;
+	}
+	
 	/**
 	 * Analyze keywords
 	 * SiteSearch_keywords: archive grouped by keywords
@@ -165,11 +167,11 @@ class Piwik_SiteSearch_Archive {
 				visit.idsite = :idsite AND
 				action.type = 1 AND
 				action.search_term IS NOT NULL AND
-				(visit.visit_server_date BETWEEN :startDate AND :endDate)
+				(visit_first_action_time BETWEEN :startDate AND :endDate)
 			GROUP BY
 				action.search_term
 		';
-
+		
 		$keywordsData = Piwik_FetchAll($sql, $this->getSqlBindings());
 		
 		$noResultsData = array();
@@ -195,6 +197,7 @@ class Piwik_SiteSearch_Archive {
 	
 	/**
 	 * Analyze pages associated with the search
+	 * Excludes other searches
 	 * following=true, searchTerm=false: all pages that were visited after a search
 	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
 	 * following=false, searchTerm=false: pages searches started from
@@ -214,19 +217,15 @@ class Piwik_SiteSearch_Archive {
 		if ($searchTerm) {
 			// analyze one search term
 			$where = 'AND action_set.search_term = :searchTerm '
-			       . 'AND (action_get.search_term IS NULL OR '
-			       . 'action_get.search_term != :searchTerm)';
+			       . 'AND action_get.search_term IS NULL ';
 			$bind[':searchTerm'] = $searchTerm;
 		} else {
 			// analyze all keywords
-			$where = 'AND action_set.search_term IS NOT NULL';
+			$where = 'AND action_set.search_term IS NOT NULL '
+			       . 'AND action_get.search_term IS NULL ';
 		}
 		
-		$url = $this->site['main_url'];
-		if (substr($url, -1) == '/') {
-			$url = substr($url, 0, -1);
-		}
-		$bind[':url'] = $url;
+		$bind[':url'] = $this->getSiteUrlBase();
 		
 		$sql = '
 			SELECT

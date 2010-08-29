@@ -213,12 +213,12 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		';
 		$bind = array(':name' => $url.'%');
 		$result = Piwik_FetchAll($sql, $bind);
-        
+		
 		$parameter = $site['sitesearch_parameter'];
 		foreach ($result as $action) {
 			$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
 			if ($hit) {
-				$bind = array(':searchTerm' => urldecode($match[1]));
+				$bind = array(':searchTerm' => strtolower(urldecode($match[1])));
 				Piwik_Query('
 					UPDATE '.Piwik_Common::prefixTable('log_action').'
 					SET search_term = :searchTerm

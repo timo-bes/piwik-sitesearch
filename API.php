@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-25
+ * Modified: 2010-08-29
  */
 
 class Piwik_SiteSearch_API {
@@ -42,6 +42,8 @@ class Piwik_SiteSearch_API {
 	/** Get evolution of search
 	 * @return Piwik_DataTable*/
 	public function getSearchEvolution($idSite, $period, $date) {
+		// TODO: archive
+		
 		switch ($period) {
 		case 'year':
 			$period = 'month';
@@ -186,6 +188,7 @@ class Piwik_SiteSearch_API {
     private function getSearchRefinementsArray($keyword) {
 
         // TODO: limit period
+        // TODO: archive
 
 		// get all searches for the keyword
 		// if a keyword was searched multiple times within one visit,

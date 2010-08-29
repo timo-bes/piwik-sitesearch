@@ -76,6 +76,11 @@ class Piwik_SiteSearch_Archive {
 	public static function archiveDay(Piwik_ArchiveProcessing $archive) {
 		$self = self::getInstance();
 		$self->extractArchiveProcessing($archive);
+		if (empty($self->site['sitesearch_url']) ||
+				empty($self->site['sitesearch_parameter'])) {
+			return;
+		}
+		
 		$self->dayAnalyzeKeywords();
 		$self->dayAnalyzeAssociatedPages(true);
 		$self->dayAnalyzeAssociatedPages(false);
@@ -85,6 +90,10 @@ class Piwik_SiteSearch_Archive {
 	public static function archivePeriod(Piwik_ArchiveProcessing $archive) {
 		$self = self::getInstance();
 		$self->extractArchiveProcessing($archive);
+		if (empty($self->site['sitesearch_url']) ||
+				empty($self->site['sitesearch_parameter'])) {
+			return;
+		}
 		
 		// archive the main tables
 		$archive->archiveDataTable(array(

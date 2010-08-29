@@ -29,8 +29,14 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		        . 'ADD `sitesearch_url` VARCHAR( 100 ) NULL, '
 		        . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
 		$query2 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
-		        . 'ADD `search_term` VARCHAR( 255 ) NULL,'
-		        . 'ADD `search_results` INTEGER NULL';
+		        . 'ADD `search_term` INTEGER NULL';
+		$query3 = 'ADD INDEX `search_term` (`search_term`)';
+		$query4 = 'CREATE TABLE `'.Piwik_Common::prefixTable('log_sitesearch').'` ( '
+		        . '`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '
+		        . '`idsite` INT NOT NULL, '
+		        . '`search_term` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL, '
+		        . '`results` INT NOT NULL )';
+		
 		try {
 			Zend_Registry::get('db')->query($query1);
 		} catch (Exception $e) {
@@ -38,6 +44,12 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		}
 		try {
 			Zend_Registry::get('db')->query($query2);
+		} catch (Exception $e) {}
+		try {
+			Zend_Registry::get('db')->query($query3);
+		} catch (Exception $e) {}
+		try {
+			Zend_Registry::get('db')->query($query4);
 		} catch (Exception $e) {}
 	}
 	
@@ -50,8 +62,11 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		Zend_Registry::get('db')->query($query);
 		
 		$query = 'ALTER TABLE `'.Piwik_Common::prefixTable('log_action').'` '
-		       . 'DROP `search_term`, '
-		       . 'DROP `search_results`';
+		       . 'DROP `search_term`';
+		
+		Zend_Registry::get('db')->query($query);
+		
+		$query = 'DROP TABLE `'.Piwik_Common::prefixTable('log_sitesearch').'`';
 		
 		Zend_Registry::get('db')->query($query);
 	}
@@ -120,9 +135,19 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		$action = $notification->getNotificationObject();
 		$idaction = $action->getIdActionUrl();
 		
+		// search results
+		$data = Piwik_Common::getRequestVar('data', '');
+		$data = html_entity_decode($data);
+		$data = json_decode($data, true);
+		$resultCount = false;
+		if (isset($data['SiteSearch_Results'])) {
+			$resultCount = intval($data['SiteSearch_Results']);
+		}
+		
 		// search term
 		$sql = '
 			SELECT
+				site.idsite,
 				site.main_url,
 				site.sitesearch_url,
 				site.sitesearch_parameter
@@ -143,6 +168,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		
 		$result = Piwik_FetchAll($sql);
 		$site = $result[0];
+		
 		if (!empty($site['sitesearch_url']) && !empty($site['sitesearch_parameter'])) {
 			$url = $site['main_url'];
 			if (substr($url, -1) != '/') {
@@ -152,31 +178,15 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			
 			$parameter = $site['sitesearch_parameter'];
 			$actionUrl = $action->getActionUrl();
+			
 			if (substr($actionUrl, 0, strlen($url)) == $url) {
-				$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $actionUrl, $match);
-				if ($hit) {
-					$sql = '
-						UPDATE '.Piwik_Common::prefixTable('log_action').'
-						SET search_term = :searchTerm
-						WHERE idaction = '.intval($idaction).'
-					';
-					Piwik_Query($sql, array(':searchTerm'
-							=> strtolower(urldecode($match[1]))));
-				}
+				require_once PIWIK_INCLUDE_PATH .'/plugins/SiteSearch/Archive.php';
+				Piwik_SiteSearch_Archive::logAction(array(
+					'idaction' => $idaction,
+					'name' => $actionUrl
+				), $site['idsite'], $site, $resultCount);
 			}
 		}
-		
-		// search results
-		$data = Piwik_Common::getRequestVar('data', '');
-		$data = html_entity_decode($data);
-		$data = json_decode($data, true);
-		if (!isset($data['SiteSearch_Results'])) return;
-		$resultCount = intval($data['SiteSearch_Results']);
-		Piwik_Query('
-			UPDATE `'.Piwik_Common::prefixTable('log_action').'`
-			SET search_results = '.intval($resultCount).'
-			WHERE idaction = '.intval($idaction).'
-		');
 	}
 	
 }

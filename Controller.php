@@ -171,21 +171,18 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Analyze site for serach URLs */
 	private function analyzeSite($idSite) {
-		// remove all searchterms from db
+		// remove all searchterms from actions
 		Piwik_Query('
 			UPDATE '.Piwik_Common::prefixTable('log_action').' AS action
 			SET search_term = NULL
-			WHERE type = 1 AND search_term IS NOT NULL AND EXISTS (
+			WHERE search_term IS NOT NULL AND EXISTS (
 				SELECT
-					visit.idsite
+					search.idsite
 				FROM
-					'.Piwik_Common::prefixTable('log_link_visit_action').' AS link
-				LEFT JOIN
-					'.Piwik_Common::prefixTable('log_visit').' AS visit
-					ON visit.idvisit = link.idvisit
+					'.Piwik_Common::prefixTable('log_sitesearch').' AS search
 				WHERE
-					visit.idsite = '.intval($idSite).' AND
-					link.idaction_url = action.idaction
+					search.idsite = '.intval($idSite).' AND
+					search.id = action.search_term
 			)
 		');
 		
@@ -209,18 +206,20 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$bind = array(':name' => $url.'%');
 		$result = Piwik_FetchAll($sql, $bind);
 		
-		$parameter = $site['sitesearch_parameter'];
 		foreach ($result as $action) {
-			$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
-			if ($hit) {
-				$bind = array(':searchTerm' => strtolower(urldecode($match[1])));
-				Piwik_Query('
-					UPDATE '.Piwik_Common::prefixTable('log_action').'
-					SET search_term = :searchTerm
-					where idaction = '.intval($action['idaction']).'
-				', $bind);
-			}
+			Piwik_SiteSearch_Archive::logAction($action, $idSite, $site);
 		}
+		
+		// remove unneccessary sitesearch entries
+		$sql = '
+			DELETE FROM '.Piwik_Common::prefixTable('log_sitesearch').'
+			WHERE idsite = '.intval($idSite).' AND NOT EXISTS (
+				SELECT action.idaction
+				FROM '.Piwik_Common::prefixTable('log_action').' AS action
+				WHERE action.search_term = id
+			)
+		';
+		Piwik_Query($sql);
 	}
 	
 }

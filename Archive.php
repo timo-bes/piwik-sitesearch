@@ -71,6 +71,56 @@ class Piwik_SiteSearch_Archive {
 
 		return $dataTable;
     }
+    
+    /** Extend logging of an action */
+    public static function logAction($action, $idSite, $site, $resultCount=false) {
+    	$parameter = $site['sitesearch_parameter'];
+    	$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
+		if ($hit) {
+			$searchTerm = strtolower(urldecode($match[1]));
+			$id = self::getSearchTermId($searchTerm, $idSite, $resultCount);
+			$bind = array(':searchTerm' => $id);
+			Piwik_Query('
+				UPDATE '.Piwik_Common::prefixTable('log_action').'
+				SET search_term = :searchTerm
+				WHERE idaction = '.intval($action['idaction']).'
+			', $bind);
+		}
+    }
+    
+	/** Get search term id (select or insert) */
+	private static function getSearchTermId($searchTerm, $idSite, $resultCount) {
+		$searchTerm = utf8_encode(strtolower(trim($searchTerm)));
+		$bind = array(':searchTerm' => $searchTerm, 'idSite' => intval($idSite));
+		
+		$sql = '
+			SELECT id, results
+			FROM '.Piwik_Common::prefixTable('log_sitesearch').'
+			WHERE search_term = :searchTerm AND idsite = :idSite
+		';
+		$row = Piwik_FetchRow($sql, $bind);
+		if ($row) {
+			if ($resultCount !== false && $resultCount != $row['results']) {
+				// update results count
+				$sql = '
+					UPDATE '.Piwik_Common::prefixTable('log_sitesearch').'
+					SET results = '.intval($resultCount).'
+					WHERE search_term = :searchTerm AND idsite = :idSite
+				';
+				Piwik_Query($sql, $bind);
+			}
+			return intval($row['id']);
+		}
+		
+		$bind[':results'] = intval($resultCount);
+		$sql = '
+			INSERT INTO '.Piwik_Common::prefixTable('log_sitesearch').'
+			(search_term, idsite, results) VALUES (:searchTerm, :idSite, :results)
+		';
+		Piwik_Query($sql, $bind);
+		
+		return Piwik_FetchOne('SELECT LAST_INSERT_ID() AS id');
+	}
 	
 	/** Build archive for a single day */
 	public static function archiveDay(Piwik_ArchiveProcessing $archive) {
@@ -84,6 +134,7 @@ class Piwik_SiteSearch_Archive {
 		$self->dayAnalyzeKeywords();
 		$self->dayAnalyzeAssociatedPages(true);
 		$self->dayAnalyzeAssociatedPages(false);
+		$self->dayAnalyzeNumberOfSearches();
 	}
 	
 	/** Build archive for a period */
@@ -130,6 +181,15 @@ class Piwik_SiteSearch_Archive {
 			$url = substr($url, 0, -1);
 		}
 		return $url;
+	}
+	
+	/**
+	 * Analyze searches
+	 * - number of visits with searches
+	 * - number of total searches
+	 */
+	private function dayAnalyzeNumberOfSearches() {
+		
 	}
 	
 	/**

@@ -33,6 +33,8 @@ function SiteSearch_ManipulateTable(selector) {
 		request('pages', 0, 'sitesearch_previous_pages');
 		request('evolution', false, 'sitesearch_evolution');
         request('getRefinements', false, 'sitesearch_refinements');
+		
+		$('#sitesearch_hide').show();
 	});
 	
 }

@@ -24,9 +24,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->evolution = $this->evolution(true);
 		$view->keywords = $this->keywords(true);
 		$view->noResults = $this->noResults();
-		$view->followingPages = $this->getPagesTable(false, true);
-		$view->previousPages = $this->getPagesTable(false, false);
-        $view->refinements = $this->getRefinements(true);
+		$view->followingPages = '';
+		$view->previousPages = '';
+        $view->refinements = '';
 		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
 		echo $view->render();
 	}
@@ -99,11 +99,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	}
 	
 	/** Get the pages for a keyword helper */
-	private function getPagesTable($searchTerm, $following, $idaction=false) {
-		if ($idaction == false) {
-			return '';
-		}
-		
+	private function getPagesTable($searchTerm, $following, $idaction) {
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
 		$view->keyword = $searchTerm;
 		$view->period = $this->range->getLocalizedLongString();
@@ -124,7 +120,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	}
 
     /** Get search refinements */
-	public function getRefinements($return=false) {
+	public function getRefinements() {
         $searchTerm = Piwik_Common::getRequestVar('search_term', false);
         
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
@@ -137,11 +133,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$viewDataTable->setColumnsToDisplay(array('keyword', 'hits'));
 		$viewDataTable->disableFooterIcons();
 
-		$table = $this->renderView($viewDataTable, true);
-        if ($return) {
-            return $table;
-        }
-        echo $table;
+		echo $this->renderView($viewDataTable, true);
 	}
 
 	/** Administration index */

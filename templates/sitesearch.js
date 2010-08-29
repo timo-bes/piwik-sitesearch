@@ -15,13 +15,6 @@ function SiteSearch_ManipulateTable(selector) {
 					+ '<img alt="" src="themes/default/images/loading-blue.gif"> '
 					+ 'Loading data... </div>');
 			
-			if (method == 'pages') {
-				var attr = 'datatable_' + (followingVal ? 'following' : 'previous');
-				var dataTableId = $this.attr(attr);
-			} else {
-				var dataTableId = false;
-			}
-			
 			$.post('index.php', {
 				module: 'SiteSearch',
 				action: method,
@@ -30,7 +23,7 @@ function SiteSearch_ManipulateTable(selector) {
 				period: piwik.period,
 				date: piwik.currentDateString,
 				following: followingVal,
-				dataTable: dataTableId
+				idaction: $this.attr('idaction')
 			}, function(response){
 				$('#'+divId).html(response);
 			});

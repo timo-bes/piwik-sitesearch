@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-07-25
+ * Modified: 2010-08-29
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -91,15 +91,19 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$searchTerm = Piwik_Common::getRequestVar('search_term', '');
 		if ($searchTerm == '') exit;
 		
-		$dataTableId = Piwik_Common::getRequestVar('dataTable', false);
-		if (!$dataTableId) exit;
+		$idaction = Piwik_Common::getRequestVar('idaction', false);
+		if (!$idaction) exit;
 		
 		$following = Piwik_Common::getRequestVar('following', true) ? true : false;
-		echo $this->getPagesTable($searchTerm, $following, $dataTableId);
+		echo $this->getPagesTable($searchTerm, $following, $idaction);
 	}
 	
 	/** Get the pages for a keyword helper */
-	private function getPagesTable($searchTerm, $following, $dataTableId=0) {
+	private function getPagesTable($searchTerm, $following, $idaction=false) {
+		if ($idaction == false) {
+			return '';
+		}
+		
 		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
 		$view->keyword = $searchTerm;
 		$view->period = $this->range->getLocalizedLongString();
@@ -108,12 +112,11 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
 		$viewDataTable->init($this->pluginName, $id, $method);
-		$viewDataTable->setRequestParameter('search_term', $searchTerm);
-		$viewDataTable->setRequestParameter('dataTable', $dataTableId);
-		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Page'));
+		$viewDataTable->setRequestParameter('idaction', $idaction);
+		$viewDataTable->setColumnTranslation('page', Piwik_Translate('SiteSearch_Page'));
 		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
 		$viewDataTable->setSortedColumn('hits', 'desc');
-		$viewDataTable->setColumnsToDisplay(array('label', 'hits'));
+		$viewDataTable->setColumnsToDisplay(array('page', 'hits'));
 		$viewDataTable->disableFooterIcons();
 		$view->table = $this->renderView($viewDataTable, true);
 		

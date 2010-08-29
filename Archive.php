@@ -102,26 +102,6 @@ class Piwik_SiteSearch_Archive {
 			'SiteSearch_followingPages',
 			'SiteSearch_previousPages'
 		));
-		
-		$dateStart = $self->period->getDateStart()->getTimestamp();
-		$tableName = 'archive_blob_'.date('Y_m', $dateStart);
-		
-		$sql = '
-			SELECT
-				name
-			FROM
-				'.Piwik_Common::prefixTable($tableName).' AS visit
-			WHERE
-				name LIKE "SiteSearch_followingPages_%" OR
-				name LIKE "SiteSearch_previousPages_%"
-			GROUP BY
-				name
-		';
-		
-		$tables = Piwik_FetchAll($sql);
-		foreach ($tables AS $table) {
-			$archive->archiveDataTable($table['name']);
-		}
 	}
 	
 	/** Extract values from ArchiveProcessing */
@@ -160,6 +140,7 @@ class Piwik_SiteSearch_Archive {
 	private function dayAnalyzeKeywords() {
 		$sql = '
 			SELECT
+				action.idaction,
 				action.search_term AS label,
 				action.search_results AS `'.self::INDEX_RESULTS.'`,
 				COUNT(action.idaction) AS `'.self::INDEX_SUM_HITS.'`,
@@ -194,24 +175,11 @@ class Piwik_SiteSearch_Archive {
 		$this->archiveDataArray('noResults', $noResultsData);
 	}
 	
-	/** Aggregate metadata for keyword rows */
-	private function getKeywordsMetadata(&$row) {
-		$term = $row['label'];
-		return array(
-			'search_term' => $term,
-			'datatable_following' => $this->dayAnalyzeAssociatedPages(true, $term),
-			'datatable_previous' => $this->dayAnalyzeAssociatedPages(false, $term)
-		);
-	}
-	
 	/**
-	 * Analyze pages associated with the search
-	 * Excludes other searches
-	 * following=true, searchTerm=false: all pages that were visited after a search
-	 * following=true, searchTerm=x: pages that were after seraching for a certain keyword
-	 * following=false, searchTerm=false: pages searches started from
+	 * Analyze pages associated with the search and stores them in a single
+	 * DataTable for all keywords.
 	 */
-	private function dayAnalyzeAssociatedPages($following, $searchTerm=false) {
+	private function dayAnalyzeAssociatedPages($following) {
 		if ($following) {
 			// pages following a search
 			$getAction = 'idaction_url';
@@ -223,22 +191,13 @@ class Piwik_SiteSearch_Archive {
 		}
 		
 		$bind = $this->getSqlBindings();
-		if ($searchTerm) {
-			// analyze one search term
-			$where = 'AND action_set.search_term = :searchTerm '
-			       . 'AND action_get.search_term IS NULL ';
-			$bind[':searchTerm'] = $searchTerm;
-		} else {
-			// analyze all keywords
-			$where = 'AND action_set.search_term IS NOT NULL '
-			       . 'AND action_get.search_term IS NULL ';
-		}
-		
 		$bind[':url'] = $this->getSiteUrlBase();
 		
 		$sql = '
 			SELECT
-				REPLACE(action_get.name, :url, "") AS label,
+				CONCAT(action_set.idaction, "_", action_get.idaction) AS label,
+				action_set.idaction,
+				REPLACE(action_get.name, :url, "") AS page,
 				COUNT(action_get.idaction) AS `'.self::INDEX_SUM_HITS.'`
 			FROM
 				'.Piwik_Common::prefixTable('log_action').' AS action_set
@@ -254,42 +213,39 @@ class Piwik_SiteSearch_Archive {
 			WHERE
 				visit.idsite = :idsite AND
 				visit_action.idaction_url_ref != 0 AND
+				action_set.search_term IS NOT NULL AND
+			    action_get.search_term IS NULL AND
 				(visit.visit_server_date BETWEEN :startDate AND :endDate)
-				'.$where.'
 			GROUP BY
-				action_get.idaction
+				action_get.idaction,
+				action_set.idaction
 		';
 		
 		$data = Piwik_FetchAll($sql, $bind);
+		
 		$name = ($following ? 'following' : 'previous').'Pages';
-		$isSubTable = $searchTerm ? true : false;
-		return $this->archiveDataArray($name, $data, false, $isSubTable);
+		return $this->archiveDataArray($name, $data);
 	}
 	
 	/**
 	 * Build DataTable from array and archive it
-	 * If isSubTable is set, the datatable will be stored under SiteSearch_keyword_id
 	 * @return id of the datatable
 	 */
-	private function archiveDataArray($keyword, &$data, $keywordsCallback=false,
-			$isSubTable=false) {
-		
+	private function archiveDataArray($keyword, &$data, $addSearchTermMetaData=false) {
 		$dataTable = new Piwik_DataTable();
 		foreach ($data as &$row) {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
-			if ($keywordsCallback) {
-				$rowData[Piwik_DataTable_Row::METADATA] =
-						$this->getKeywordsMetadata($row);
+			if ($addSearchTermMetaData) {
+				$rowData[Piwik_DataTable_Row::METADATA] = array(
+					'idaction' => $row['idaction'],
+					'search_term' => $row['label']
+				);
 			}
 			$dataTable->addRow(new Piwik_DataTable_Row($rowData));
 		}
 		
 		$id = $dataTable->getId();
 		$name = 'SiteSearch_'.$keyword;
-		if ($isSubTable) {
-			$name .= '_'.$id;
-		}
-		
 		$this->archiveProcessing->insertBlobRecord($name, $dataTable->getSerialized());
 		destroy($dataTable);
 		

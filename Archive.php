@@ -7,23 +7,40 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-23
- * Modified: 2010-08-29
+ * Modified: 2010-08-31
  */
 
 class Piwik_SiteSearch_Archive {
 	
 	/* Archive indexes */
-    const INDEX_SUM_HITS = 2;
-    const INDEX_SUM_UNIQUE_HITS = 3;
-    // 4 corresponds to Piwik_Archive::INDEX_MAX_ACTIONS and will therefore
-    // not be summed but maximized (and every row has the same value).
-    const INDEX_RESULTS = 4;
+    const HITS = 2;
+    const UNIQUE_HITS = 3;
+    const RESULTS = 4;
+    const SEARCH_TERM = 5;
+    const SEARCH_TERM_ID = 6;
+    const SEARCH_TERM_ID_2 = 7;
+    const PAGE = 8;
+    const LABEL = 'label';
     
-    /** Archive index to property name mapping */
-    public static $indexToNameMapping = array(
-		self::INDEX_SUM_HITS => 'hits',
-        self::INDEX_SUM_UNIQUE_HITS => 'unique_hits',
-        self::INDEX_RESULTS => 'results'
+    /** The columns that should be summed when archiving */
+    public static $columnsToSum = array(
+    	self::HITS,
+    	self::UNIQUE_HITS
+    );
+    
+    /** The indexes that should be the latest value */
+    public static $columnsToTakeLatest = array(
+    	self::RESULTS
+    );
+    
+    /** Columns traslations */
+    private static $columnTranslations = array(
+    	self::HITS => 'SiteSearch_Hits',
+    	self::UNIQUE_HITS => 'SiteSearch_UniqueHits',
+	    self::RESULTS => 'SiteSearch_Results',
+	    self::SEARCH_TERM => 'SiteSearch_Keyword',
+	    self::LABEL => 'SiteSearch_Keyword',
+	    self::PAGE => 'SiteSearch_Page'
     );
     
     /* Current archive processing variables */
@@ -39,7 +56,7 @@ class Piwik_SiteSearch_Archive {
 	
 	private static $instance;
 	/** Get singleton instance
-	 * @return Piwik_SiteSerach_Archive */
+	 * @return Piwik_SiteSearch_Archive */
 	public static function getInstance() {
 		if (self::$instance == null) {
 			self::$instance = new self;
@@ -72,20 +89,27 @@ class Piwik_SiteSearch_Archive {
 		
 		$archive = Piwik_Archive::build($idsite, $period, $date);
 		if ($numeric) {
+			// numeric archives are only used for search evolution
 			$dataTable = $archive->getDataTableFromNumeric($name);
 			$dataTable->queueFilter('ReplaceColumnNames', array(false, array(
-				'SiteSearch_totalSearches' => 'totalSearches',
-				'SiteSearch_visitsWithSearches' => 'visitsWithSearches'
+				'SiteSearch_totalSearches' => self::HITS,
+				'SiteSearch_visitsWithSearches' => self::UNIQUE_HITS
 			)));
             $dataTable->applyQueuedFilters();
 		} else {
 			$dataTable = $archive->getDataTable($name);
-			$dataTable->queueFilter('ReplaceColumnNames',
-					array(false, self::$indexToNameMapping));
-            $dataTable->applyQueuedFilters();
 		}
-
+		
 		return $dataTable;
+    }
+    
+    /** Translate a column */
+    public static function displayColumns($view, $columns) {
+    	foreach ($columns as $column) {
+	    	$view->setColumnTranslation($column,
+	    			Piwik_Translate(self::$columnTranslations[$column]));
+    	}
+    	$view->setColumnsToDisplay($columns);
     }
     
     /** Extend logging of an action */
@@ -104,7 +128,7 @@ class Piwik_SiteSearch_Archive {
 		}
     }
     
-	/** Get search term id (select or insert) */
+    /** Get search term id (select or insert) */
 	private static function getSearchTermId($searchTerm, $idSite, $resultCount) {
 		$searchTerm = utf8_encode(strtolower(trim($searchTerm)));
 		$bind = array(':searchTerm' => $searchTerm, 'idSite' => intval($idSite));
@@ -137,6 +161,7 @@ class Piwik_SiteSearch_Archive {
 		
 		return Piwik_FetchOne('SELECT LAST_INSERT_ID() AS id');
 	}
+    
 	
 	/** Build archive for a single day */
 	public static function archiveDay(Piwik_ArchiveProcessing $archive) {
@@ -151,6 +176,7 @@ class Piwik_SiteSearch_Archive {
 		$self->dayAnalyzeAssociatedPages(true);
 		$self->dayAnalyzeAssociatedPages(false);
 		$self->dayAnalyzeNumberOfSearches();
+		$self->dayAnalyzeRefinements();
 	}
 	
 	/** Build archive for a period */
@@ -166,7 +192,8 @@ class Piwik_SiteSearch_Archive {
 			'SiteSearch_keywords',
 			'SiteSearch_noResults',
 			'SiteSearch_followingPages',
-			'SiteSearch_previousPages'
+			'SiteSearch_previousPages',
+			'SiteSearch_refinements'
 		));
 		
 		$archive->archiveNumericValuesSum(array(
@@ -235,6 +262,52 @@ class Piwik_SiteSearch_Archive {
 	}
 	
 	/**
+	 * Analyze refinements
+	 * Find out which terms visitors also searched for
+	 */
+	private function dayAnalyzeRefinements() {
+		$sql = '
+			SELECT
+				CONCAT(action_from.search_term, "_", action_to.search_term)
+						AS `'.self::LABEL.'`,
+				action_from.search_term AS `'.self::SEARCH_TERM_ID.'`,
+				action_to.search_term AS `'.self::SEARCH_TERM_ID_2.'`,
+				search.search_term AS `'.self::SEARCH_TERM.'`,
+				search.results AS `'.self::RESULTS.'`,
+				COUNT(DISTINCT visit.idvisit) AS `'.self::UNIQUE_HITS.'`
+			FROM
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action_from
+				ON visit.idvisit = visit_action_from.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action_from
+				ON action_from.idaction = visit_action_from.idaction_url
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS visit_action_to
+				ON visit_action_from.idvisit = visit_action_to.idvisit
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_action').' AS action_to
+				ON action_to.idaction = visit_action_to.idaction_url
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_sitesearch').' AS search
+				ON action_to.search_term = search.id
+			WHERE
+				visit.idsite = :idsite AND
+				(visit.visit_first_action_time BETWEEN :startDate AND :endDate) AND
+				action_from.search_term IS NOT NULL AND
+				action_to.search_term IS NOT NULL AND
+				action_from.search_term != action_to.search_term
+			GROUP BY
+				action_from.search_term,
+				action_to.search_term
+		';
+		
+		$refinements = Piwik_FetchAll($sql, $this->getSqlBindings());
+		$this->archiveDataArray('refinements', $refinements);
+	}
+	
+	/**
 	 * Analyze keywords
 	 * SiteSearch_keywords: archive grouped by keywords
 	 * SiteSearch_noResults: archive grouped by keywords with no results
@@ -242,11 +315,12 @@ class Piwik_SiteSearch_Archive {
 	private function dayAnalyzeKeywords() {
 		$sql = '
 			SELECT
-				search.id AS id_search,
-				search.search_term AS label,
-				search.results AS `'.self::INDEX_RESULTS.'`,
-				COUNT(action.idaction) AS `'.self::INDEX_SUM_HITS.'`,
-				COUNT(DISTINCT visit.idvisit) AS `'.self::INDEX_SUM_UNIQUE_HITS.'`
+				search.id AS `'.self::LABEL.'`,
+				search.id AS `'.self::SEARCH_TERM_ID.'`,
+				search.search_term AS `'.self::SEARCH_TERM.'`,
+				search.results AS `'.self::RESULTS.'`,
+				COUNT(action.idaction) AS `'.self::HITS.'`,
+				COUNT(DISTINCT visit.idvisit) AS `'.self::UNIQUE_HITS.'`
 			FROM
 				'.Piwik_Common::prefixTable('log_visit').' AS visit
 			LEFT JOIN
@@ -270,7 +344,7 @@ class Piwik_SiteSearch_Archive {
 		
 		$noResultsData = array();
 		foreach ($keywordsData as &$search) {
-			if (!$search[self::INDEX_RESULTS]) {
+			if (!$search[self::RESULTS]) {
 				$noResultsData[] = $search;
 			}
 		}
@@ -299,10 +373,10 @@ class Piwik_SiteSearch_Archive {
 		
 		$sql = '
 			SELECT
-				CONCAT(search.id, "_", action_get.idaction) AS label,
-				search.id AS id_search,
-				REPLACE(action_get.name, :url, "") AS page,
-				COUNT(action_get.idaction) AS `'.self::INDEX_SUM_HITS.'`
+				CONCAT(search.id, "_", action_get.idaction) AS `'.self::LABEL.'`,
+				search.id AS `'.self::SEARCH_TERM_ID.'`,
+				REPLACE(action_get.name, :url, "") AS `'.self::PAGE.'`,
+				COUNT(action_get.idaction) AS `'.self::HITS.'`
 			FROM
 				'.Piwik_Common::prefixTable('log_action').' AS action_set
 			LEFT JOIN
@@ -344,11 +418,11 @@ class Piwik_SiteSearch_Archive {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
 			if ($addSearchTermMetaData) {
 				$rowData[Piwik_DataTable_Row::METADATA] = array(
-					'id_search' => $row['id_search'],
-					'search_term' => $row['label']
+					'id_search' => $row[self::SEARCH_TERM_ID],
+					'search_term' => $row[self::SEARCH_TERM]
 				);
 			}
-			$dataTable->addRow(new Piwik_DataTable_Row($rowData));
+			$dataTable->addRow(new Piwik_SiteSearch_ExtendedDataTableRow($rowData));
 		}
 		
 		$id = $dataTable->getId();

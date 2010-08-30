@@ -18,7 +18,7 @@ function SiteSearch_ManipulateTable(selector) {
 			$.post('index.php', {
 				module: 'SiteSearch',
 				action: method,
-				search_term: term,
+				searchTerm: term,
 				idSite: piwik.idSite,
 				period: piwik.period,
 				date: piwik.currentDateString,
@@ -35,6 +35,10 @@ function SiteSearch_ManipulateTable(selector) {
         request('getRefinements', false, 'sitesearch_refinements');
 		
 		$('#sitesearch_hide').show();
+		
+	    var first = term.charAt(0).toUpperCase();
+	    term = first + term.substr(1);
+		$('#sitesearch_head').html(term).parent().show();
 	});
 	
 }

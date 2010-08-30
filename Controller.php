@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-29
+ * Modified: 2010-08-30
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -26,13 +26,16 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->evolution = $this->evolution(true);
 		$view->keywords = $this->keywords();
 		$view->noResults = $this->noResults();
+		$view->period = $this->range->getLocalizedLongString();
 		echo '<script type="text/javascript" src="plugins/SiteSearch/templates/sitesearch.js"></script>';
 		echo $view->render();
 	}
 	
 	/** Search evolution */
 	public function evolution($return=false) {
-		$searchTerm = Piwik_Common::getRequestVar('search_term', false);
+		$searchTerm = Piwik_Common::getRequestVar('searchTerm', false);
+		$searchTerm = false;
+		
 		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
 		$view = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
@@ -42,15 +45,13 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 					$this->getGraphParamsModified(array('date' => $this->strDate)));
 		}
 		
-		$view->setColumnTranslation('visitsWithSearches', Piwik_Translate('SiteSearch_VisitsWithSearches'));
-		$view->setColumnTranslation('totalSearches', Piwik_Translate('SiteSearch_TotalSearches'));
-		$view->setColumnsToDisplay(array(
-			'totalSearches',
-			'visitsWithSearches'
+		Piwik_SiteSearch_Archive::displayColumns($view, array(
+			Piwik_SiteSearch_Archive::UNIQUE_HITS,
+			Piwik_SiteSearch_Archive::HITS
 		));
 		
 		if ($searchTerm) {
-			$view->setFooterMessage('Keyword: '.htmlentities($searchTerm));
+			$view->setFooterMessage('Keyword: '.$searchTerm);
 			$view->setRequestParameter('idSearch', $idSearch);
 		}
 		
@@ -66,12 +67,15 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	private function keywords() {
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$viewDataTable->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
-		$viewDataTable->setColumnsToDisplay(array('label', 'hits', 'unique_hits', 'results'));
-		$viewDataTable->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
-		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
-		$viewDataTable->setColumnTranslation('unique_hits', Piwik_Translate('SiteSearch_UniqueHits'));
-		$viewDataTable->setColumnTranslation('results', Piwik_Translate('SiteSearch_Results'));
-		$viewDataTable->setSortedColumn('unique_hits', 'desc');
+		
+		Piwik_SiteSearch_Archive::displayColumns($viewDataTable, array(
+			Piwik_SiteSearch_Archive::SEARCH_TERM,
+			Piwik_SiteSearch_Archive::HITS,
+			Piwik_SiteSearch_Archive::UNIQUE_HITS,
+			Piwik_SiteSearch_Archive::RESULTS
+		));
+		
+		$viewDataTable->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
 		$viewDataTable->disableFooterIcons();
 		$viewDataTable->setLimit(20);
 		$viewDataTable->setTemplate('SiteSearch/templates/datatable.tpl');
@@ -82,18 +86,21 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function noResults() {
 		$view = Piwik_ViewDataTable::factory('table');
 		$view->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getNoResults');
-		$view->setColumnsToDisplay(array('label', 'hits', 'unique_hits'));
-		$view->setColumnTranslation('label', Piwik_Translate('SiteSearch_Keyword'));
-		$view->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
-		$view->setColumnTranslation('unique_hits', Piwik_Translate('SiteSearch_UniqueHits'));
-		$view->setSortedColumn('label', 'asc');
+		
+		Piwik_SiteSearch_Archive::displayColumns($view, array(
+			Piwik_SiteSearch_Archive::SEARCH_TERM,
+			Piwik_SiteSearch_Archive::HITS,
+			Piwik_SiteSearch_Archive::UNIQUE_HITS
+		));
+		
+		$view->setSortedColumn(Piwik_SiteSearch_Archive::SEARCH_TERM, 'asc');
 		$view->disableFooterIcons();
 		return $this->renderView($view, true);
 	}
 	
 	/** Get the pages for a keyword */
 	public function pages() {
-		$searchTerm = Piwik_Common::getRequestVar('search_term', '');
+		$searchTerm = Piwik_Common::getRequestVar('searchTerm', '');
 		if ($searchTerm == '') exit;
 		
 		$idSerach = Piwik_Common::getRequestVar('idSearch', false);
@@ -105,40 +112,45 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Get the pages for a keyword helper */
 	private function getPagesTable($searchTerm, $following, $idaction) {
-		$view = new Piwik_View('SiteSearch/templates/pages.tpl');
-		$view->keyword = $searchTerm;
-		$view->period = $this->range->getLocalizedLongString();
-		
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
 		$viewDataTable->init($this->pluginName, $id, $method);
 		$viewDataTable->setRequestParameter('idaction', $idaction);
-		$viewDataTable->setColumnTranslation('page', Piwik_Translate('SiteSearch_Page'));
-		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
-		$viewDataTable->setSortedColumn('hits', 'desc');
-		$viewDataTable->setColumnsToDisplay(array('page', 'hits'));
-		$viewDataTable->disableFooterIcons();
-		$view->table = $this->renderView($viewDataTable, true);
 		
-		return $view->render();
+		Piwik_SiteSearch_Archive::displayColumns($viewDataTable, array(
+			Piwik_SiteSearch_Archive::PAGE,
+			Piwik_SiteSearch_Archive::HITS
+		));
+		
+		$viewDataTable->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
+		$viewDataTable->disableFooterIcons();
+		return $this->renderView($viewDataTable, true);
 	}
 
     /** Get search refinements */
 	public function getRefinements() {
-        $searchTerm = Piwik_Common::getRequestVar('search_term', false);
-        
+		$searchTerm = Piwik_Common::getRequestVar('searchTerm', false);
+		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
+		
 		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$method = 'SiteSearch.getSearchRefinements';
 		$viewDataTable->init($this->pluginName, __FUNCTION__, $method);
-		$viewDataTable->setRequestParameter('search_term', $searchTerm);
-		$viewDataTable->setColumnTranslation('keyword', Piwik_Translate('SiteSearch_Keyword'));
-		$viewDataTable->setColumnTranslation('hits', Piwik_Translate('SiteSearch_Hits'));
-		$viewDataTable->setSortedColumn('hits', 'desc');
-		$viewDataTable->setColumnsToDisplay(array('keyword', 'hits'));
+		$viewDataTable->setRequestParameter('idSearch', $idSearch);
+		
+		$viewDataTable->setColumnTranslation('searchTerm', Piwik_Translate('SiteSearch_Keyword'));
+		$viewDataTable->setColumnTranslation('unique_hits', Piwik_Translate('SiteSearch_Hits'));
+		$viewDataTable->setColumnTranslation('results', Piwik_Translate('SiteSearch_Results'));
+		
+		Piwik_SiteSearch_Archive::displayColumns($viewDataTable, array(
+			Piwik_SiteSearch_Archive::SEARCH_TERM,
+			Piwik_SiteSearch_Archive::UNIQUE_HITS,
+			Piwik_SiteSearch_Archive::RESULTS
+		));
+		
+		$viewDataTable->setSortedColumn(Piwik_SiteSearch_Archive::UNIQUE_HITS, 'desc');
 		$viewDataTable->disableFooterIcons();
-
-		echo $this->renderView($viewDataTable, true);
+		echo $view->table = $this->renderView($viewDataTable, true);
 	}
 
 	/** Administration index */

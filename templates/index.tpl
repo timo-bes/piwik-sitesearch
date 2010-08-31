@@ -1,7 +1,7 @@
 <div style="min-width: 930px">
 	
 	<div id="leftcolumn">
-		<h2 class="sitesearch_hasdescription">Keywords</h2>
+		<h2 class="sitesearch_hasdescription">{'SiteSearch_Keywords'|translate}</h2>
 		<div class="sitesearch_description_wrapper">
 			<div class="sitesearch_description">
 				<p class="sitesearch_main_description">
@@ -27,7 +27,7 @@
 		</div>
 		{$keywords}
 		
-		<h2 class="sitesearch_hasdescription">Searches without results</h2>
+		<h2 class="sitesearch_hasdescription">{'SiteSearch_SearchesWithoutResults'|translate}</h2>
 		<div class="sitesearch_description_wrapper">
 			<div class="sitesearch_description">
 				<p class="sitesearch_main_description">
@@ -49,7 +49,7 @@
 		</div>
 		{$noResults}
 		
-		<h2 class="sitesearch_hasdescription">Percentage of search users</h2>
+		<h2 class="sitesearch_hasdescription">{'SiteSearch_PercentageOfSearchUsers'|translate}</h2>
 		<div class="sitesearch_description_wrapper">
 			<div class="sitesearch_description">
 				<p class="sitesearch_main_description">
@@ -67,7 +67,7 @@
 			({$period})
 		</h1>
 		
-		<h2 class="sitesearch_hasdescription">Evolution</h2>
+		<h2 class="sitesearch_hasdescription">{'SiteSearch_Evolution'|translate}</h2>
 		<div class="sitesearch_description_wrapper">
 			<div class="sitesearch_description">
 				<p class="sitesearch_main_description">
@@ -84,7 +84,7 @@
 		
 		<div id="sitesearch_hide" style="display:none">
 			
-			<h2 class="sitesearch_hasdescription">Following Pages</h2>
+			<h2 class="sitesearch_hasdescription">{'SiteSearch_FollowingPages'|translate}</h2>
 			<div class="sitesearch_description_wrapper">
 				<div class="sitesearch_description">
 					<p class="sitesearch_main_description">
@@ -102,7 +102,7 @@
 			</div>
 			<div id="sitesearch_following_pages"></div>
 			
-			<h2 class="sitesearch_hasdescription">Previous Pages</h2>
+			<h2 class="sitesearch_hasdescription">{'SiteSearch_PreviousPages'|translate}</h2>
 			<div class="sitesearch_description_wrapper">
 				<div class="sitesearch_description">
 					<p class="sitesearch_main_description">
@@ -120,7 +120,7 @@
 			</div>
 			<div id="sitesearch_previous_pages"></div>
 		
-		    <h2 class="sitesearch_hasdescription">Associated Keywords</h2>
+		    <h2 class="sitesearch_hasdescription">{'SiteSearch_AssociatedKeywords'|translate}</h2>
 			<div class="sitesearch_description_wrapper">
 				<div class="sitesearch_description">
 					<p class="sitesearch_main_description">

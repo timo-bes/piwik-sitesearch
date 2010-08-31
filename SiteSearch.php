@@ -105,6 +105,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
         	'AssetManager.getCssFiles' => 'getCssFiles',
 			'Menu.add' => 'addMenu',
 			'AdminMenu.add' => 'addAdminMenu',
+        	'WidgetsList.add' => 'addWidgets',
         	'Tracker.Action.record' => 'logResults',
             'ArchiveProcessing_Day.compute' => 'archiveDay',
         	'ArchiveProcessing_Period.compute' => 'archivePeriod'
@@ -135,6 +136,12 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		Piwik_AddAdminMenu('SiteSearch_SiteSearch',
 			array('module' => 'SiteSearch', 'action' => 'admin'),
 			Piwik::isUserIsSuperUser(), 8);
+	}
+	
+	/** Provide Widgets */
+	public function addWidgets() {
+		Piwik_AddWidget('Site Search', 'Most popular Searches',
+				'SiteSearch', 'keywordsWidget');
 	}
 
     /** Build archive for a day */

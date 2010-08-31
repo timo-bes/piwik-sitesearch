@@ -62,7 +62,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	}
 	
 	/** Keywords overview */
-	public function keywords($return=false) {
+	public function keywords($return=false, $limit=20) {
 		// manipulate filter column for searchbox
 		$_GET['filter_column'] = Piwik_SiteSearch_Archive::SEARCH_TERM;
 		
@@ -76,14 +76,19 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			Piwik_SiteSearch_Archive::RESULTS
 		));
 		
-		$view->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
+		$view->setSortedColumn(Piwik_SiteSearch_Archive::UNIQUE_HITS, 'desc');
 		$view->disableFooterIcons();
-		$view->setLimit(20);
+		$view->setLimit($limit);
 		$view->setTemplate('SiteSearch/templates/datatable_keywords.tpl');
 		
 		$result = $this->renderView($view, true);
 		if ($return) return $result;
 		echo $result;
+	}
+	
+	/** Keywords widget */
+	public function keywordsWidget() {
+		$this->keywords(false, 10);
 	}
 	
 	/** Find searches without results */
@@ -100,7 +105,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			Piwik_SiteSearch_Archive::UNIQUE_HITS
 		));
 		
-		$view->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
+		$view->setSortedColumn(Piwik_SiteSearch_Archive::UNIQUE_HITS, 'desc');
 		$view->disableFooterIcons();
 		$view->setTemplate('SiteSearch/templates/datatable_keywords.tpl');
 		

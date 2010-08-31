@@ -32,9 +32,6 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Search evolution */
 	public function evolution($return=false) {
-		$searchTerm = Piwik_Common::getRequestVar('searchTerm', false);
-		$searchTerm = false;
-		
 		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
 		$view = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
@@ -49,16 +46,19 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			Piwik_SiteSearch_Archive::HITS
 		));
 		
-		if ($searchTerm) {
+		if ($idSearch) {
 			$view->setRequestParameter('idSearch', $idSearch);
 		}
 		$view->disableFooter();
 		$result = $this->renderView($view, true);
 		
-		if ($return) {
-			return $result;
-		}
+		if ($return) return $result;
 		echo $result;
+	}
+	
+	/** Evolution widget */
+	public function evolutionWidget() {
+		$this->evolution();
 	}
 	
 	/** Keywords overview */

@@ -140,8 +140,10 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	
 	/** Provide Widgets */
 	public function addWidgets() {
-		Piwik_AddWidget('Site Search', 'Most popular Searches',
+		Piwik_AddWidget('Site Search', 'Most popular internal searches',
 				'SiteSearch', 'keywordsWidget');
+		Piwik_AddWidget('Site Search', 'Internal search evolution',
+				'SiteSearch', 'evolutionWidget');
 	}
 
     /** Build archive for a day */

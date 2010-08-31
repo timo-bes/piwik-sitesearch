@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-30
+ * Modified: 2010-08-31
  */
 
 class Piwik_SiteSearch_API {
@@ -59,6 +59,7 @@ class Piwik_SiteSearch_API {
 	/** Get evolution of search
 	 * @return Piwik_DataTable */
 	public function getSearchEvolution($idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
 		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
 		if (!$idSearch) {
@@ -83,6 +84,7 @@ class Piwik_SiteSearch_API {
 	/** Get search refinements
 	 * @return Piwik_DataTable */
 	public function getSearchRefinements($idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
 		$dataTable = Piwik_SiteSearch_Archive::getDataTable(
 			'refinements', $idSite, $period, $date);
 		
@@ -113,12 +115,14 @@ class Piwik_SiteSearch_API {
 	/** Get the next sites after keyword was searched
 	 * @return Piwik_DataTable */
 	public function getFollowingPages($idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
 		return $this->getAssociatedPages($idSite, true, $period, $date);
 	}
 	
 	/** Get the next sites before keyword was searched
 	 * @return Piwik_DataTable */
 	public function getPreviousPages($idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
 		return $this->getAssociatedPages($idSite, false, $period, $date);
 	}
 	

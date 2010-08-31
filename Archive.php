@@ -304,7 +304,7 @@ class Piwik_SiteSearch_Archive {
 		';
 		
 		$refinements = Piwik_FetchAll($sql, $this->getSqlBindings());
-		$this->archiveDataArray('refinements', $refinements);
+		$this->archiveDataArray('refinements', $refinements, self::SEARCH_TERM_ID_2);
 	}
 	
 	/**
@@ -349,8 +349,8 @@ class Piwik_SiteSearch_Archive {
 			}
 		}
 		
-		$this->archiveDataArray('keywords', $keywordsData, true);
-		$this->archiveDataArray('noResults', $noResultsData);
+		$this->archiveDataArray('keywords', $keywordsData, self::LABEL);
+		$this->archiveDataArray('noResults', $noResultsData, self::LABEL);
 	}
 	
 	/**
@@ -418,8 +418,8 @@ class Piwik_SiteSearch_Archive {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
 			if ($addSearchTermMetaData) {
 				$rowData[Piwik_DataTable_Row::METADATA] = array(
-					'id_search' => $row[self::SEARCH_TERM_ID],
-					'search_term' => $row[self::SEARCH_TERM]
+					'idSearch' => $row[$addSearchTermMetaData],
+					'searchTerm' => $row[self::SEARCH_TERM]
 				);
 			}
 			$dataTable->addRow(new Piwik_SiteSearch_ExtendedDataTableRow($rowData));

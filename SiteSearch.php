@@ -6,7 +6,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-29
+ * Modified: 2010-08-31
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
@@ -100,6 +100,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	/** Register Hooks */
 	public function getListHooksRegistered() {
         $hooks = array(
+        	'AssetManager.getJsFiles' => 'getJsFiles',
 			'Menu.add' => 'addMenu',
 			'AdminMenu.add' => 'addAdminMenu',
         	'Tracker.Action.record' => 'logResults',
@@ -108,6 +109,12 @@ class Piwik_SiteSearch extends Piwik_Plugin {
         );
         return $hooks;
     }
+    
+    /** Add JavaScript */
+    public function getJsFiles($notification) {
+		$jsFiles = &$notification->getNotificationObject();
+		$jsFiles[] = 'plugins/SiteSearch/templates/sitesearch.js';
+	}
 	
 	/** Normal menu hook */
 	public function addMenu() {

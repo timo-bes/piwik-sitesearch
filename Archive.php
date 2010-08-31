@@ -298,7 +298,8 @@ class Piwik_SiteSearch_Archive {
 				(visit.visit_first_action_time BETWEEN :startDate AND :endDate) AND
 				action_from.search_term IS NOT NULL AND
 				action_to.search_term IS NOT NULL AND
-				action_from.search_term != action_to.search_term
+				action_from.search_term != action_to.search_term AND
+				search.search_term != ""
 			GROUP BY
 				action_from.search_term,
 				action_to.search_term

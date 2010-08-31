@@ -253,6 +253,20 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			)
 		';
 		Piwik_Query($sql);
+		
+		$this->clearArchive($idSite);
+	}
+	
+	/** Clear archive for a site */
+	private function clearArchive($idSite) {
+		$sql = 'SHOW TABLES LIKE "'.Piwik_Common::prefixTable('archive_').'%"';
+		$tables = Piwik_FetchAll($sql);
+		foreach ($tables as $table) {
+			$table = array_values($table);
+			$table = $table[0];
+			$sql = 'DELETE FROM '.$table.' WHERE idsite = '.intval($idSite);
+			Piwik_Query($sql);
+		}
 	}
 	
 }

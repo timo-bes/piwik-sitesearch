@@ -144,6 +144,8 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 				'SiteSearch', 'keywordsWidget');
 		Piwik_AddWidget('Site Search', 'Internal search evolution',
 				'SiteSearch', 'evolutionWidget');
+		Piwik_AddWidget('Site Search', 'Percentage of search users',
+				'SiteSearch', 'searchPercentageWidget');
 	}
 
     /** Build archive for a day */

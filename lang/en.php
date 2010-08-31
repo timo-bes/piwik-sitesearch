@@ -32,7 +32,8 @@ $translations = array(
 	'SiteSearch_VisitsWithSearches' => 'Visits with Searches',
 	'SiteSearch_TotalSearches' => 'Total Searches',
 	'SiteSearch_TableNoData' => 'There is no data for this report.',
-	
+	'SiteSearch_SearchUserPercentage' => '% of users using the search',
+
 	'SiteSearch_KeywordsAreaDescription' => 'This table shows the keywords, that users searched for in the given period. Click on a row to see details.',
 	'SiteSearch_SearchesWithoutResultsAreaDescription' => 'This table shows the keywords, that users searched for in the given period and had no reults. Click on a row to see details.',
 	'SiteSearch_KeywordColumnDescription' => 'The entire searchterm, that was entered.',
@@ -49,7 +50,9 @@ $translations = array(
 	'SiteSearch_PageHitsColumnDescription' => 'The number of times, users that searched for the keyword visited the page.',
 	
 	'SiteSearch_AssociatedKeywordsAreaDescription' => 'The keywords shown in this table have been searched for by the users, that also searched for the selected keyword.',
-	'SiteSearch_AssociatedHitsColumnDescription' => 'The number of visitors, that searched for both the selected keyword and the keyword displayed in the table row.'
+	'SiteSearch_AssociatedHitsColumnDescription' => 'The number of visitors, that searched for both the selected keyword and the keyword displayed in the table row.',
+	
+	'SiteSearch_SearchUserPercentageAreaDescription' => 'This graph shows the percentage of users, that were at least using the search once during their visit.'
 );
 
 ?>

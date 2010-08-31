@@ -26,12 +26,13 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->evolution = $this->evolution(true);
 		$view->keywords = $this->keywords(true);
 		$view->noResults = $this->noResults(true);
+		$view->searchPercentage = $this->searchPercentage(true);
 		$view->period = $this->range->getLocalizedLongString();
 		echo $view->render();
 	}
 	
 	/** Search evolution */
-	public function evolution($return=false) {
+	public function evolution($return=false, $footer=false) {
 		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
 		
 		$view = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
@@ -49,7 +50,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		if ($idSearch) {
 			$view->setRequestParameter('idSearch', $idSearch);
 		}
-		$view->disableFooter();
+		if (!$footer) {
+			$view->disableFooter();
+		}
 		$result = $this->renderView($view, true);
 		
 		if ($return) return $result;
@@ -58,7 +61,37 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Evolution widget */
 	public function evolutionWidget() {
-		$this->evolution();
+		$this->evolution(false, true);
+	}
+	
+	/** Search user percentage */
+	public function searchPercentage($return=false, $footer=false) {
+		$idSearch = Piwik_Common::getRequestVar('idSearch', false);
+		
+		$view = Piwik_SiteSearch_ExtendedChartEvolution::factory('graphEvolution');
+		$view->init($this->pluginName, __FUNCTION__,
+				'SiteSearch.getSearchPercentageEvolution');
+		if (!is_null($this->date)) {
+			$view->setParametersToModify(
+					$this->getGraphParamsModified(array('date' => $this->strDate)));
+		}
+		
+		$view->setColumnTranslation('search_percentage', Piwik_Translate(
+				'SiteSearch_SearchUserPercentage'));
+    	$view->setColumnsToDisplay('search_percentage');
+		
+		if (!$footer) {
+			$view->disableFooter();
+		}
+		$result = $this->renderView($view, true);
+		
+		if ($return) return $result;
+		echo $result;
+	}
+	
+	/** Search user percentage widget */
+	public function searchPercentageWidget() {
+		$this->searchPercentage(false, true);
 	}
 	
 	/** Keywords overview */

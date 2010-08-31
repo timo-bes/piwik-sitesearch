@@ -48,6 +48,16 @@
 			</div>
 		</div>
 		{$noResults}
+		
+		<h2 class="sitesearch_hasdescription">Percentage of search users</h2>
+		<div class="sitesearch_description_wrapper">
+			<div class="sitesearch_description">
+				<p class="sitesearch_main_description">
+					{'SiteSearch_SearchUserPercentageAreaDescription'|translate}
+				</p>
+			</div>
+		</div>
+		{$searchPercentage}
 	</div>
 	
 	<div id="rightcolumn">

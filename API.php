@@ -81,6 +81,21 @@ class Piwik_SiteSearch_API {
 		return $dataTable;
 	}
 	
+	/** Get evolution of search percentage
+	 * @return Piwik_DataTable */
+	public function getSearchPercentageEvolution($idSite, $period, $date) {
+		Piwik::checkUserHasViewAccess($idSite);
+		
+		$archive = Piwik_Archive::build($idSite, $period, $date);
+		$dataTable = $archive->getDataTableFromNumeric(
+				array('SiteSearch_visitsWithSearches', 'nb_visits'));
+		$dataTable->filter('ColumnCallbackAddColumnPercentage',
+				array('search_percentage', 'SiteSearch_visitsWithSearches',
+				'nb_visits', 2));
+		
+		return $dataTable;
+	}
+	
 	/** Get search refinements
 	 * @return Piwik_DataTable */
 	public function getSearchRefinements($idSite, $period, $date) {

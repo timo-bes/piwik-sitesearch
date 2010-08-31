@@ -232,11 +232,23 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$url .= $site['sitesearch_url'];
 		
 		$sql = '
-			SELECT idaction, name
-			FROM '.Piwik_Common::prefixTable('log_action').'
-			WHERE type = 1 AND name LIKE :name
+			SELECT
+				action.idaction,
+				action.name
+			FROM
+				'.Piwik_Common::prefixTable('log_action').' AS action
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_link_visit_action').' AS link
+				ON action.idaction = link.idaction_url
+			LEFT JOIN
+				'.Piwik_Common::prefixTable('log_visit').' AS visit
+				ON link.idvisit = visit.idvisit
+			WHERE
+				action.type = 1 AND
+				action.name LIKE :name AND
+				visit.idsite = :idSite
 		';
-		$bind = array(':name' => $url.'%');
+		$bind = array(':name' => $url.'%', 'idSite' => intval($idSite));
 		$result = Piwik_FetchAll($sql, $bind);
 		
 		foreach ($result as $action) {

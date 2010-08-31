@@ -30,12 +30,13 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		        . 'ADD `sitesearch_parameter` VARCHAR( 100 ) NULL';
 		$query2 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
 		        . 'ADD `search_term` INTEGER NULL DEFAULT NULL';
-		$query3 = 'ADD INDEX `search_term` (`search_term`)';
+		$query3 = 'ALTER IGNORE TABLE `'.Piwik_Common::prefixTable('log_action').'` '
+		        . 'ADD INDEX `search_term` (`search_term`)';
 		$query4 = 'CREATE TABLE `'.Piwik_Common::prefixTable('log_sitesearch').'` ( '
 		        . '`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '
 		        . '`idsite` INT NOT NULL, '
 		        . '`search_term` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL, '
-		        . '`results` INT NOT NULL )';
+		        . '`results` INT NOT NULL)';
 		
 		try {
 			Zend_Registry::get('db')->query($query1);

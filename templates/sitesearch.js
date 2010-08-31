@@ -2,11 +2,6 @@ function SiteSearch_ManipulateTable(selector) {
 	
 	$(selector + ' table.SiteSearch tbody tr')
 	.css('cursor', 'pointer')
-	.hover(function() {
-		$(this).find('td').css('color', 'black');
-	}, function() {
-		$(this).find('td').css('color', '');
-	})
 	.click(function() {
 		var $this = $(this);
 		var term = $this.attr('searchterm');

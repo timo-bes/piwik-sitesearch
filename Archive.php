@@ -20,6 +20,7 @@ class Piwik_SiteSearch_Archive {
     const SEARCH_TERM_ID = 6;
     const SEARCH_TERM_ID_2 = 7;
     const PAGE = 8;
+    const URL = 9;
     const LABEL = 'label';
     
     /** The columns that should be summed when archiving */
@@ -376,6 +377,7 @@ class Piwik_SiteSearch_Archive {
 				CONCAT(search.id, "_", action_get.idaction) AS `'.self::LABEL.'`,
 				search.id AS `'.self::SEARCH_TERM_ID.'`,
 				REPLACE(action_get.name, :url, "") AS `'.self::PAGE.'`,
+				action_get.name AS `'.self::URL.'`,
 				COUNT(action_get.idaction) AS `'.self::HITS.'`
 			FROM
 				'.Piwik_Common::prefixTable('log_action').' AS action_set
@@ -405,14 +407,15 @@ class Piwik_SiteSearch_Archive {
 		$data = Piwik_FetchAll($sql, $bind);
 		
 		$name = ($following ? 'following' : 'previous').'Pages';
-		return $this->archiveDataArray($name, $data);
+		return $this->archiveDataArray($name, $data, false, true);
 	}
 	
 	/**
 	 * Build DataTable from array and archive it
 	 * @return id of the datatable
 	 */
-	private function archiveDataArray($keyword, &$data, $addSearchTermMetaData=false) {
+	private function archiveDataArray($keyword, &$data, $addSearchTermMetaData=false,
+			$addUrlMetaData=false) {
 		$dataTable = new Piwik_DataTable();
 		foreach ($data as &$row) {
 			$rowData = array(Piwik_DataTable_Row::COLUMNS => $row);
@@ -421,6 +424,9 @@ class Piwik_SiteSearch_Archive {
 					'idSearch' => $row[$addSearchTermMetaData],
 					'searchTerm' => $row[self::SEARCH_TERM]
 				);
+			}
+			if ($addUrlMetaData) {
+				$rowData[Piwik_DataTable_Row::METADATA]['url'] = $row[self::URL];
 			}
 			$dataTable->addRow(new Piwik_SiteSearch_ExtendedDataTableRow($rowData));
 		}

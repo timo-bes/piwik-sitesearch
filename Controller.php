@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-30
+ * Modified: 2010-08-31
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -24,8 +24,8 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	public function index() {
 		$view = new Piwik_View('SiteSearch/templates/index.tpl');
 		$view->evolution = $this->evolution(true);
-		$view->keywords = $this->keywords();
-		$view->noResults = $this->noResults();
+		$view->keywords = $this->keywords(true);
+		$view->noResults = $this->noResults(true);
 		$view->period = $this->range->getLocalizedLongString();
 		echo $view->render();
 	}
@@ -50,10 +50,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		));
 		
 		if ($searchTerm) {
-			$view->setFooterMessage('Keyword: '.$searchTerm);
 			$view->setRequestParameter('idSearch', $idSearch);
 		}
-		
+		$view->disableFooter();
 		$result = $this->renderView($view, true);
 		
 		if ($return) {
@@ -63,7 +62,10 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	}
 	
 	/** Keywords overview */
-	private function keywords() {
+	public function keywords($return=false) {
+		// manipulate filter column for searchbox
+		$_GET['filter_column'] = Piwik_SiteSearch_Archive::SEARCH_TERM;
+		
 		$view = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$view->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getSearchKeywords');
 		
@@ -77,12 +79,18 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
 		$view->disableFooterIcons();
 		$view->setLimit(20);
-		$view->setTemplate('SiteSearch/templates/datatable.tpl');
-		return $this->renderView($view, true);
+		$view->setTemplate('SiteSearch/templates/datatable_keywords.tpl');
+		
+		$result = $this->renderView($view, true);
+		if ($return) return $result;
+		echo $result;
 	}
 	
 	/** Find searches without results */
-	public function noResults() {
+	public function noResults($return=false) {
+		// manipulate filter column for searchbox
+		$_GET['filter_column'] = Piwik_SiteSearch_Archive::SEARCH_TERM;
+		
 		$view = new Piwik_SiteSearch_ExtendedHtmlTable();
 		$view->init($this->pluginName,  __FUNCTION__, 'SiteSearch.getNoResults');
 		
@@ -92,10 +100,13 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			Piwik_SiteSearch_Archive::UNIQUE_HITS
 		));
 		
-		$view->setSortedColumn(Piwik_SiteSearch_Archive::SEARCH_TERM, 'asc');
+		$view->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
 		$view->disableFooterIcons();
-		$view->setTemplate('SiteSearch/templates/datatable.tpl');
-		return $this->renderView($view, true);
+		$view->setTemplate('SiteSearch/templates/datatable_keywords.tpl');
+		
+		$result = $this->renderView($view, true);
+		if ($return) return $result;
+		echo $result;
 	}
 	
 	/** Get the pages for a keyword */
@@ -112,20 +123,23 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 	
 	/** Get the pages for a keyword helper */
 	private function getPagesTable($searchTerm, $following, $idaction) {
-		$viewDataTable = new Piwik_SiteSearch_ExtendedHtmlTable();
+		$view = new Piwik_SiteSearch_ExtendedHtmlTable();
+		
 		$method = $following ? 'SiteSearch.getFollowingPages' : 'SiteSearch.getPreviousPages';
 		$id = __FUNCTION__.($following ? 'Following' : 'Previous');
-		$viewDataTable->init($this->pluginName, $id, $method);
-		$viewDataTable->setRequestParameter('idaction', $idaction);
+		$view->init($this->pluginName, $id, $method);
+		$view->setRequestParameter('idaction', $idaction);
 		
-		Piwik_SiteSearch_Archive::displayColumns($viewDataTable, array(
+		Piwik_SiteSearch_Archive::displayColumns($view, array(
 			Piwik_SiteSearch_Archive::PAGE,
 			Piwik_SiteSearch_Archive::HITS
 		));
 		
-		$viewDataTable->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
-		$viewDataTable->disableFooterIcons();
-		return $this->renderView($viewDataTable, true);
+		$view->setSortedColumn(Piwik_SiteSearch_Archive::HITS, 'desc');
+		$view->disableFooter();
+		$view->disableSort();
+		$view->setTemplate('SiteSearch/templates/datatable_pages.tpl');
+		return $this->renderView($view, true);
 	}
 
     /** Get search refinements */
@@ -149,8 +163,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		));
 		
 		$view->setSortedColumn(Piwik_SiteSearch_Archive::UNIQUE_HITS, 'desc');
-		$view->disableFooterIcons();
-		$view->setTemplate('SiteSearch/templates/datatable.tpl');
+		$view->disableFooter();
+		$view->disableSort();
+		$view->setTemplate('SiteSearch/templates/datatable_keywords.tpl');
 		echo $this->renderView($view, true);
 	}
 

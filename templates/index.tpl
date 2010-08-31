@@ -26,7 +26,7 @@
 			<div id="sitesearch_following_pages" style="margin-bottom: 25px"></div>
 			
 			<h2>Previous Pages</h2>
-			<div id="sitesearch_previous_pages"></div>
+			<div id="sitesearch_previous_pages" style="margin-bottom: 25px"></div>
 		
 		    <h2>Refinements</h2>
 		    <div id="sitesearch_refinements"></div>

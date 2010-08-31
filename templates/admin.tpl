@@ -20,7 +20,7 @@
 
 
 <form method="POST" action="{url module=SiteSearch action=admin}">
-<table class="adminTable adminTableNoBorder" style="width: 700px; margin: 15px 0">
+<table class="adminTable adminTableNoBorder" style="width: 800px; margin: 15px 0">
 	<thead>
 		<tr>
 			<td><b>{'SiteSearch_Website'|translate}</b></td>

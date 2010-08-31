@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-09-31
+ * Modified: 2010-08-31
  */
 
 $translations = array(
@@ -31,7 +31,25 @@ $translations = array(
 	'SiteSearch_Page' => 'Page',
 	'SiteSearch_VisitsWithSearches' => 'Visits with Searches',
 	'SiteSearch_TotalSearches' => 'Total Searches',
-	'SiteSearch_TableNoData' => 'There is no data for this report.'
+	'SiteSearch_TableNoData' => 'There is no data for this report.',
+	
+	'SiteSearch_KeywordsAreaDescription' => 'This table shows the keywords, that users searched for in the given period. Click on a row to see details.',
+	'SiteSearch_SearchesWithoutResultsAreaDescription' => 'This table shows the keywords, that users searched for in the given period and had no reults. Click on a row to see details.',
+	'SiteSearch_KeywordColumnDescription' => 'The entire searchterm, that was entered.',
+	'SiteSearch_HitsColumnDescription' => 'The number of times, the searchterm was entered.',
+	'SiteSearch_UniqueHitsColumnDescription' => 'The number of visits, that included a search for the keyword.',
+	'SiteSearch_ResultsColumnDescription' => 'The number of search results for the keyword (passed to the Piwik tracker, only works if set up properly).',
+	
+	'SiteSearch_EvolutionAreaDescription' => 'This graph shows the evolution of searches over time.',
+	'SiteSearch_EvolutionAreaDescription2' => 'At first, the graph shows statistics for the search in general, when a keyword is selected, it displays only information for the particular keyword.',
+	
+	'SiteSearch_FollowingPagesAreaDescription' => 'This table shows the pages, that were visited directly after searching for the keyword. They are likely to be the ones, the user was looking for.',
+	'SiteSearch_PreviousPagesAreaDescription' => 'This table shows the pages, that were visited directly before searching for the keyword. This may contain clues about where users tend to get lost on the website.',
+	'SiteSearch_PageColumnDescription' => 'The URL of the site. Click on it to go to the page.',
+	'SiteSearch_PageHitsColumnDescription' => 'The number of times, users that searched for the keyword visited the page.',
+	
+	'SiteSearch_AssociatedKeywordsAreaDescription' => 'The keywords shown in this table have been searched for by the users, that also searched for the selected keyword.',
+	'SiteSearch_AssociatedHitsColumnDescription' => 'The number of visitors, that searched for both the selected keyword and the keyword displayed in the table row.'
 );
 
 ?>

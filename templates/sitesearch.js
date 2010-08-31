@@ -37,3 +37,17 @@ function SiteSearch_ManipulateTable(selector) {
 	});
 	
 }
+
+$(document).ready(function() {
+	$('h2.sitesearch_hasdescription').live('mouseover', function() {
+		var $this = $(this);
+		var $link = $(document.createElement('span'))
+				.addClass('sitesearch_description_button')
+				.html('(?)');
+		$this.append($link);
+	}).live('mouseout', function() {
+		$(this).find('span').remove();
+	}).live('click', function() {
+		$(this).next().toggle();
+	});
+});

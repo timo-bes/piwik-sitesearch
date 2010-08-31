@@ -336,7 +336,8 @@ class Piwik_SiteSearch_Archive {
 			WHERE
 				visit.idsite = :idsite AND
 				action.search_term IS NOT NULL AND
-				(visit_first_action_time BETWEEN :startDate AND :endDate)
+				(visit_first_action_time BETWEEN :startDate AND :endDate) AND
+				search.search_term != ""
 			GROUP BY
 				search.id
 		';

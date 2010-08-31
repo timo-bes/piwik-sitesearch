@@ -1,0 +1,45 @@
+
+#sitesearch_evolution,
+#sitesearch_following_pages,
+#sitesearch_previous_pages {
+	margin-bottom: 25px;
+}
+
+h2.sitesearch_hasdescription {
+	cursor: pointer;
+}
+
+.sitesearch_description_button {
+	position: absolute;
+	z-index: -1;
+	margin-left: 10px;
+	font-size: 12px;
+	line-height: 25px;
+}
+
+.sitesearch_description_wrapper {
+	display: none;
+	width: 450px; 
+}
+
+.sitesearch_description {
+	border: 1px solid #CBD9EB;
+	color: #444444;
+	background: #FAFAFA;
+	padding: 0 8px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	margin-bottom: 10px;
+	font-size: 12px;
+}
+
+.sitesearch_description p {
+	margin: 5px 0;
+	padding: 0;
+}
+
+.sitesearch_description p.sitesearch_main_description {
+	margin: 5px 0 7px 0;
+	font-weight: bold;
+}

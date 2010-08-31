@@ -101,6 +101,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 	public function getListHooksRegistered() {
         $hooks = array(
         	'AssetManager.getJsFiles' => 'getJsFiles',
+        	'AssetManager.getCssFiles' => 'getCssFiles',
 			'Menu.add' => 'addMenu',
 			'AdminMenu.add' => 'addAdminMenu',
         	'Tracker.Action.record' => 'logResults',
@@ -114,6 +115,12 @@ class Piwik_SiteSearch extends Piwik_Plugin {
     public function getJsFiles($notification) {
 		$jsFiles = &$notification->getNotificationObject();
 		$jsFiles[] = 'plugins/SiteSearch/templates/sitesearch.js';
+	}
+	
+	/** Add CSS */
+    public function getCssFiles($notification) {
+		$cssFiles = &$notification->getNotificationObject();
+		$cssFiles[] = 'plugins/SiteSearch/templates/sitesearch.css';
 	}
 	
 	/** Normal menu hook */

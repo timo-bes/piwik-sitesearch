@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-31
+ * Modified: 2010-09-01
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {

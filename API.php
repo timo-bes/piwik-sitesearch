@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-31
+ * Modified: 2010-09-01
  */
 
 class Piwik_SiteSearch_API {
@@ -89,11 +89,17 @@ class Piwik_SiteSearch_API {
 		$archive = Piwik_Archive::build($idSite, $period, $date);
 		$dataTable = $archive->getDataTableFromNumeric(
 				array('SiteSearch_visitsWithSearches', 'nb_visits'));
-		$dataTable->filter('ColumnCallbackAddColumnPercentage',
+		$dataTable->filter('ColumnCallbackAddColumnQuotient',
 				array('search_percentage', 'SiteSearch_visitsWithSearches',
-				'nb_visits', 2));
-		
+				'nb_visits', 4));
+		$dataTable->filter('ColumnCallbackReplace',
+				array('search_percentage', array($this, 'quotientToPercentageSafe')));
+				
 		return $dataTable;
+	}
+	
+	public function quotientToPercentageSafe($quotient) {
+		return 100 * $quotient;
 	}
 	
 	/** Get search refinements

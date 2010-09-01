@@ -6,7 +6,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-08-31
+ * Modified: 2010-09-02
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {
@@ -17,7 +17,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			'description' => Piwik_Translate('SiteSearch_PluginDescription'),
 			'author' => 'Timo Besenreuther, EZdesign',
 			'author_homepage' => 'http://www.ezdesign.de/',
-			'version' => '0.1.1',
+			'version' => '0.1.2',
 			'translationAvailable' => true,
 			'TrackerPlugin' => true
 		);

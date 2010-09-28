@@ -35,7 +35,7 @@
 			<td>{$site.name}</td>
 			<td><input name="SiteSearch_Data[{$site.idsite}][url]" value="{$site.sitesearch_url}" style="width: 200px"/></td>
 			<td><input name="SiteSearch_Data[{$site.idsite}][parameter]" value="{$site.sitesearch_parameter}" style="width: 100px"/></td>
-			<td><input name="SiteSearch_Data[{$site.idsite}][analyze]" value="1" type="checkbox"/>&nbsp;&nbsp;{'SiteSearch_AnalyzeURLsNow'|translate}</td>
+			<td><input name="SiteSearch_Data[{$site.idsite}][analyze]" value="1" type="checkbox" id="SiteSearch_Data_{$site.idsite}"/>&nbsp;&nbsp;<label for="SiteSearch_Data_{$site.idsite}">{'SiteSearch_AnalyzeURLsNow'|translate}</label></td>
 		</tr>
 		{/foreach}
 	</tbody>

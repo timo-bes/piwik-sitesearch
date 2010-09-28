@@ -267,7 +267,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		if (substr($url, -1) != '/') {
 			$url .= '/';
 		}
-		$url .= $site['sitesearch_url'];
+		if ($site['sitesearch_url'] != '/') {
+			$url .= $site['sitesearch_url'];
+		}
 		
 		$sql = '
 			SELECT

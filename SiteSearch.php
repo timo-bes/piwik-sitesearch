@@ -7,6 +7,9 @@
  *           EZdesign.de
  * Created:  2010-07-17
  * Modified: 2010-09-02
+ *
+ * License:  GPL v3 or later
+ *           http://www.gnu.org/licenses/gpl-3.0.html
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {

@@ -7,7 +7,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-09-01
+ * Modified: 2010-09-29
  */
 
 class Piwik_SiteSearch_Controller extends Piwik_Controller {
@@ -264,12 +264,18 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		}
 		
 		$url = $site['main_url'];
+		
+		// make sure, main url has a trailing slash
 		if (substr($url, -1) != '/') {
 			$url .= '/';
 		}
-		if ($site['sitesearch_url'] != '/') {
-			$url .= $site['sitesearch_url'];
+		
+		// make sure, sitesearch url has no leading slash
+		if (substr($site['sitesearch_url'], 0, 1) == '/') {
+			$site['sitesearch_url'] = substr($site['sitesearch_url'], 1);
 		}
+		
+		$url .= $site['sitesearch_url'];
 		
 		$sql = '
 			SELECT

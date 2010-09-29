@@ -6,7 +6,7 @@
  * Author:   Timo Besenreuther
  *           EZdesign.de
  * Created:  2010-07-17
- * Modified: 2010-09-02
+ * Modified: 2010-09-29
  *
  * License:  GPL v3 or later
  *           http://www.gnu.org/licenses/gpl-3.0.html
@@ -20,7 +20,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			'description' => Piwik_Translate('SiteSearch_PluginDescription'),
 			'author' => 'Timo Besenreuther, EZdesign',
 			'author_homepage' => 'http://www.ezdesign.de/',
-			'version' => '0.1.2',
+			'version' => '0.1.3',
 			'translationAvailable' => true,
 			'TrackerPlugin' => true
 		);

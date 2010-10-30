@@ -1,15 +1,16 @@
 <?php
 
 /**
- * Site Search Plugin
+ * Piwik - Open source web analytics
+ * SiteSearch Plugin
  *
- * Author:   Timo Besenreuther
- *           EZdesign.de
- * Created:  2010-07-17
- * Modified: 2010-09-29
+ * @link http://piwik.org
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  *
- * License:  GPL v3 or later
- *           http://www.gnu.org/licenses/gpl-3.0.html
+ * @author Timo Besenreuther, EZdesign.de
+ *
+ * @category Piwik_Plugins
+ * @package Piwik_SiteSearch
  */
 
 class Piwik_SiteSearch extends Piwik_Plugin {

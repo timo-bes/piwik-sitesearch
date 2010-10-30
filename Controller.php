@@ -298,8 +298,8 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 				action.name LIKE :name AND
 				visit.idsite = :idSite
 		';
-		$bind = array(':name' => $url.'%', 'idSite' => intval($idSite));
-		$result = Piwik_FetchAll($sql, $bind);
+		$bind = array(':name' => $url.'%', ':idSite' => intval($idSite));
+		$result = Piwik_SiteSearch_Db::fetchAll($sql, $bind);
 		
 		foreach ($result as $action) {
 			Piwik_SiteSearch_Archive::logAction($action, $idSite, $site);

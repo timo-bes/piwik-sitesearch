@@ -125,7 +125,7 @@ class Piwik_SiteSearch_Archive {
 			$searchTerm = strtolower(urldecode($match[1]));
 			$id = self::getSearchTermId($searchTerm, $idSite, $resultCount);
 			$bind = array(':searchTerm' => $id);
-			Piwik_Query('
+			Piwik_SiteSearch_Db::query('
 				UPDATE '.Piwik_Common::prefixTable('log_action').'
 				SET search_term = :searchTerm
 				WHERE idaction = '.intval($action['idaction']).'
@@ -136,14 +136,14 @@ class Piwik_SiteSearch_Archive {
     /** Get search term id (select or insert) */
 	private static function getSearchTermId($searchTerm, $idSite, $resultCount) {
 		$searchTerm = utf8_encode(strtolower(trim($searchTerm)));
-		$bind = array(':searchTerm' => $searchTerm, 'idSite' => intval($idSite));
+		$bind = array(':searchTerm' => $searchTerm, ':idSite' => intval($idSite));
 		
 		$sql = '
 			SELECT id, results
 			FROM '.Piwik_Common::prefixTable('log_sitesearch').'
 			WHERE search_term = :searchTerm AND idsite = :idSite
 		';
-		$row = Piwik_FetchRow($sql, $bind);
+		$row = Piwik_SiteSearch_Db::fetchRow($sql, $bind);
 		if ($row) {
 			if ($resultCount !== false && $resultCount != $row['results']) {
 				// update results count
@@ -152,7 +152,7 @@ class Piwik_SiteSearch_Archive {
 					SET results = '.intval($resultCount).'
 					WHERE search_term = :searchTerm AND idsite = :idSite
 				';
-				Piwik_Query($sql, $bind);
+				Piwik_SiteSearch_Db::query($sql, $bind);
 			}
 			return intval($row['id']);
 		}
@@ -162,9 +162,9 @@ class Piwik_SiteSearch_Archive {
 			INSERT INTO '.Piwik_Common::prefixTable('log_sitesearch').'
 			(search_term, idsite, results) VALUES (:searchTerm, :idSite, :results)
 		';
-		Piwik_Query($sql, $bind);
+		Piwik_SiteSearch_Db::query($sql, $bind);
 		
-		return Piwik_FetchOne('SELECT LAST_INSERT_ID() AS id');
+		return Piwik_SiteSearch_Db::fetchOne('SELECT LAST_INSERT_ID() AS id');
 	}
     
 	
@@ -258,7 +258,7 @@ class Piwik_SiteSearch_Archive {
 				action.search_term IS NOT NULL AND
 				(visit_first_action_time BETWEEN :startDate AND :endDate)
 		';
-		$result = Piwik_FetchRow($query, $this->getSqlBindings());
+		$result = Piwik_SiteSearch_Db::fetchRow($query, $this->getSqlBindings());
 		
 		$this->archiveProcessing->insertNumericRecord(
 				'SiteSearch_totalSearches', $result['searches']);
@@ -309,7 +309,7 @@ class Piwik_SiteSearch_Archive {
 				action_to.search_term
 		';
 		
-		$refinements = Piwik_FetchAll($sql, $this->getSqlBindings());
+		$refinements = Piwik_SiteSearch_Db::fetchAll($sql, $this->getSqlBindings());
 		$this->archiveDataArray('refinements', $refinements, self::SEARCH_TERM_ID_2);
 	}
 	
@@ -347,7 +347,7 @@ class Piwik_SiteSearch_Archive {
 				search.id
 		';
 		
-		$keywordsData = Piwik_FetchAll($sql, $this->getSqlBindings());
+		$keywordsData = Piwik_SiteSearch_Db::fetchAll($sql, $this->getSqlBindings());
 		
 		$noResultsData = array();
 		foreach ($keywordsData as &$search) {
@@ -410,7 +410,7 @@ class Piwik_SiteSearch_Archive {
 				action_get.idaction
 		';
 		
-		$data = Piwik_FetchAll($sql, $bind);
+		$data = Piwik_SiteSearch_Db::fetchAll($sql, $bind);
 		
 		$name = ($following ? 'following' : 'previous').'Pages';
 		return $this->archiveDataArray($name, $data, false, true);

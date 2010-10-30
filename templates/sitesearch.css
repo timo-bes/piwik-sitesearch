@@ -1,4 +1,9 @@
 
+#leftcolumn,
+#rightcolumn {
+	padding-bottom: 20px;
+}
+
 #sitesearch_evolution,
 #sitesearch_following_pages,
 #sitesearch_previous_pages {

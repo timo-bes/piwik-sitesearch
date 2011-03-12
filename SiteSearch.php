@@ -192,6 +192,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 			
 			if (substr($actionUrl, 0, strlen($url)) == $url) {
 				require_once PIWIK_INCLUDE_PATH .'/plugins/SiteSearch/Archive.php';
+				require_once PIWIK_INCLUDE_PATH .'/plugins/SiteSearch/Db.php';
 				Piwik_SiteSearch_Archive::logAction(array(
 					'idaction' => $idaction,
 					'name' => $actionUrl

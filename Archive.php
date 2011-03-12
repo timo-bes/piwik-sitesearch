@@ -404,7 +404,7 @@ class Piwik_SiteSearch_Archive {
 				visit_action.idaction_url_ref != 0 AND
 				action_set.search_term IS NOT NULL AND
 			    action_get.search_term IS NULL AND
-				(visit.visit_server_date BETWEEN :startDate AND :endDate)
+				(visit_action.server_time BETWEEN :startDate AND :endDate)
 			GROUP BY
 				search.id,
 				action_get.idaction

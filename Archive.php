@@ -378,6 +378,18 @@ class Piwik_SiteSearch_Archive {
 		$bind = $this->getSqlBindings();
 		$bind[':url'] = $this->getSiteUrlBase();
 		
+		// version class might not be available in archiving or tracker
+		require_once PIWIK_INCLUDE_PATH .'/core/Version.php';
+		
+		// check whether version is prior to 1.2, adjust sql query
+		$version = explode('.', Piwik_Version::VERSION);
+		$pre12 = $version[0] < 1 || $version[1] < 2;
+		if ($pre12) {
+			$dateRange = '(visit.visit_server_date BETWEEN :startDate AND :endDate)';
+		} else {
+			$dateRange = '(visit_action.server_time BETWEEN :startDate AND :endDate)';
+		}
+		
 		$sql = '
 			SELECT
 				CONCAT(search.id, "_", action_get.idaction) AS `'.self::LABEL.'`,
@@ -404,7 +416,7 @@ class Piwik_SiteSearch_Archive {
 				visit_action.idaction_url_ref != 0 AND
 				action_set.search_term IS NOT NULL AND
 			    action_get.search_term IS NULL AND
-				(visit_action.server_time BETWEEN :startDate AND :endDate)
+				'.$dateRange.'
 			GROUP BY
 				search.id,
 				action_get.idaction

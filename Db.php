@@ -63,7 +63,7 @@ class Piwik_SiteSearch_Db {
 		} else if (isset(self::$bindings[$name])) {
 			$newBinding = self::$bindings[$name];
 		}
-		if (!$newBinding) {
+		if ($newBinding === false) {
 			throw new Exception('Invalid binding name "'.$name.'"');
 		}
 		

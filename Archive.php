@@ -120,7 +120,7 @@ class Piwik_SiteSearch_Archive {
     /** Extend logging of an action */
     public static function logAction($action, $idSite, $site, $resultCount=false) {
     	$parameter = $site['sitesearch_parameter'];
-    	$hit = preg_match('/'.$parameter.'=(.*?)(&|$)/i', $action['name'], $match);
+    	$hit = preg_match('/'.preg_quote($parameter, '/').'=(.*?)(&|$)/i', $action['name'], $match);
 		if ($hit) {
 			$searchTerm = strtolower(urldecode($match[1]));
 			$id = self::getSearchTermId($searchTerm, $idSite, $resultCount);

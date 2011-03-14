@@ -120,7 +120,18 @@ class Piwik_SiteSearch_Archive {
     /** Extend logging of an action */
     public static function logAction($action, $idSite, $site, $resultCount=false) {
     	$parameter = $site['sitesearch_parameter'];
-    	$hit = preg_match('/'.preg_quote($parameter, '/').'=(.*?)(&|$)/i', $action['name'], $match);
+    	
+    	if ($parameter == '/') {
+    		// search urls don't use a get parameter. instead, the search term
+    		// follows the search url directly. (e.g. drupal)
+    		$url = $site['sitesearch_url'];
+    		$url = str_replace('%', '', $url); // remove wildcards
+    		$regex = '/'.preg_quote($url, '/').'(.*?)$/i';
+    	} else {
+    		$regex = '/'.preg_quote($parameter, '/').'=(.*?)(&|$)/i';
+    	}
+    	
+    	$hit = preg_match($regex, $action['name'], $match);
 		if ($hit) {
 			$searchTerm = strtolower(urldecode($match[1]));
 			$id = self::getSearchTermId($searchTerm, $idSite, $resultCount);

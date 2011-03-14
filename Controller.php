@@ -279,6 +279,15 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			$site['sitesearch_url'] = substr($site['sitesearch_url'], 1);
 		}
 		
+		// wildcards
+		if (substr($site['sitesearch_url'], 0, 1) == '*') {
+			$site['sitesearch_url'] = '%'.substr($site['sitesearch_url'], 1);
+		}
+		if (substr($site['sitesearch_url'], -1) == '*') {
+			// wildcard at the end is default, just remove the *
+			$site['sitesearch_url'] = substr($site['sitesearch_url'], 0, -1);
+		}
+		
 		$url .= $site['sitesearch_url'];
 		
 		$sql = '

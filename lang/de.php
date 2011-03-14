@@ -15,17 +15,17 @@
  */
 
 $translations = array(
-	'SiteSearch_PluginDescription' => 'Dieses plugin analysiert die interne Suche der Webseiten.',
+	'SiteSearch_PluginDescription' => 'Dieses Plugin analysiert die interne Suche der Webseiten.',
 	'SiteSearch_SiteSearch' => 'Interne Suche',
-	'SiteSearch_AdminDescription1' => 'Dieses plugin analysiert die interne Suche der Webseiten.',
-	'SiteSearch_AdminDescription2' => 'Bitte geben Sie die folgenden Werte an:',
+	'SiteSearch_AdminDescription1' => 'Dieses Plugin analysiert die interne Suche der Webseiten.',
+	'SiteSearch_AdminDescription2' => 'Bitte gib die folgenden Werte an:',
 	'SiteSearch_AdminDescription3' => 'Wenn &quot;URLs jetzt analysieren&quot; angew&auml;hlt ist, werden alle vorhandenen URLs erneut nach dem dem Suchparameter durchsucht.',
 	'SiteSearch_AdminDescription4' => 'Bei gro&szlig;en Datenbanken kann das einige Zeit in Anspruch nehmen.',
 	'SiteSearch_Website' => 'Webseite',
 	'SiteSearch_SearchURL' => 'Such-URL',
-	'SiteSearch_SearchURLDescription' => 'Die URL (relative zum Stammverzeichnis der Webseite) der Suchergebnisseite.',
+	'SiteSearch_SearchURLDescription' => 'Die URL (relativ zum Stammverzeichnis der Webseite) der Suchergebnisseite.<br />Du kannst * als Wildcard am Anfang und/oder Ende der URL verwenden.',
 	'SiteSearch_SearchParameter' => 'Suchparameter',
-	'SiteSearch_SearchParameterDescription' => 'Der Name der GET Parameters, der den Suchbegriff enth&auml;lt.',
+	'SiteSearch_SearchParameterDescription' => 'Der Name des GET Parameters, der den Suchbegriff enth&auml;lt.<br />Verwende /, wenn der Suchbegriff direkt auf die URL folgt (z.B. suche/dersuchbegriff)',
 	'SiteSearch_AnalyzeURLsNow' => 'URLs jetzt analysieren',
 	'SiteSearch_Save' => 'Speichern',
 	'SiteSearch_Keyword' => 'Suchbegriff',

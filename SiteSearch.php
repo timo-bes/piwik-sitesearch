@@ -86,9 +86,28 @@ class Piwik_SiteSearch extends Piwik_Plugin {
         	'WidgetsList.add' => 'addWidgets',
         	'Tracker.Action.record' => 'logResults',
             'ArchiveProcessing_Day.compute' => 'archiveDay',
-        	'ArchiveProcessing_Period.compute' => 'archivePeriod'
+        	'ArchiveProcessing_Period.compute' => 'archivePeriod',
+        	'Common.fetchWebsiteAttributes' => 'recordWebsiteDataInCache',
         );
         return $hooks;
+    }
+    
+    /** Add SiteSearch config to tracker cache */
+    public function recordWebsiteDataInCache($notification) {
+    	$idsite = $notification->getNotificationInfo();
+		$cache =& $notification->getNotificationObject();
+		
+		$sql = '
+			SELECT sitesearch_url, sitesearch_parameter
+			FROM '.Piwik_Common::prefixTable('site').' AS site
+			WHERE idsite = '.intval($idsite).'
+		';
+		
+		$result = Piwik_FetchAll($sql);
+		$site = $result[0];
+		
+		$cache['sitesearch_url'] = $site['sitesearch_url'];
+		$cache['sitesearch_parameter'] = $site['sitesearch_parameter'];
     }
     
     /** Add JavaScript */
@@ -146,7 +165,13 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		$action = $notification->getNotificationObject();
 		$idaction = $action->getIdActionUrl();
 		
-		// search results
+		// load site config from tracker cache
+		$info = $notification->getNotificationInfo();
+		$idsite = $info['idSite'];
+		$site = Piwik_Common::getCacheWebsiteAttributes($idsite);
+		$site['idsite'] = $idsite;
+		
+		// search results passed via JS tracker
 		$data = Piwik_Common::getRequestVar('data', '');
 		$data = html_entity_decode($data);
 		$data = json_decode($data, true);
@@ -154,33 +179,6 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		if (isset($data['SiteSearch_Results'])) {
 			$resultCount = intval($data['SiteSearch_Results']);
 		}
-		
-		// search term
-		$sql = '
-			SELECT
-				site.idsite,
-				site.main_url,
-				site.sitesearch_url,
-				site.sitesearch_parameter
-			FROM
-				'.Piwik_Common::prefixTable('site').' AS site
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_visit').' AS visit
-				ON site.idsite = visit.idsite
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_link_visit_action').' AS link
-				ON visit.idvisit = link.idvisit
-			LEFT JOIN
-				'.Piwik_Common::prefixTable('log_action').' AS action
-				ON action.idaction = link.idaction_url
-			WHERE
-				action.idaction = '.intval($idaction).'
-			GROUP BY
-				site.idsite
-		';
-		
-		$result = Piwik_FetchAll($sql);
-		$site = $result[0];
 		
 		if (!empty($site['sitesearch_url']) && !empty($site['sitesearch_parameter'])) {
 			

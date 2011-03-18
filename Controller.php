@@ -241,6 +241,7 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			if (isset($siteData['analyze']) && $siteData['analyze'] == 1) {
 				$this->analyzeSite($idsite);
 			}
+			Piwik_Common::regenerateCacheWebsiteAttributes($idsite);
 		}
 	}
 	

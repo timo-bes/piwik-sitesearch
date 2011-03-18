@@ -267,28 +267,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 			return;
 		}
 		
-		$url = $site['main_url'];
-		
-		// make sure, main url has a trailing slash
-		if (substr($url, -1) != '/') {
-			$url .= '/';
-		}
-		
-		// make sure, sitesearch url has no leading slash
-		if (substr($site['sitesearch_url'], 0, 1) == '/') {
-			$site['sitesearch_url'] = substr($site['sitesearch_url'], 1);
-		}
-		
-		// wildcards
-		if (substr($site['sitesearch_url'], 0, 1) == '*') {
-			$site['sitesearch_url'] = '%'.substr($site['sitesearch_url'], 1);
-		}
-		if (substr($site['sitesearch_url'], -1) == '*') {
-			// wildcard at the end is default, just remove the *
-			$site['sitesearch_url'] = substr($site['sitesearch_url'], 0, -1);
-		}
-		
-		$url .= $site['sitesearch_url'];
+		// this is only a rough filter, Piwik_SiteSearch_Archive::logAction
+		// will do a more precise check
+		$url = '%'.$site['sitesearch_url'].'%'.$site['sitesearch_parameter'].'=%';
 		
 		$sql = '
 			SELECT
@@ -306,8 +287,10 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 				action.type = 1 AND
 				action.name LIKE :name AND
 				visit.idsite = :idSite
+			GROUP BY
+				action.idaction
 		';
-		$bind = array(':name' => $url.'%', ':idSite' => intval($idSite));
+		$bind = array(':name' => $url, ':idSite' => intval($idSite));
 		$result = Piwik_SiteSearch_Db::fetchAll($sql, $bind);
 		
 		foreach ($result as $action) {

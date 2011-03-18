@@ -175,22 +175,23 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 				ON action.idaction = link.idaction_url
 			WHERE
 				action.idaction = '.intval($idaction).'
+			GROUP BY
+				site.idsite
 		';
 		
 		$result = Piwik_FetchAll($sql);
 		$site = $result[0];
 		
 		if (!empty($site['sitesearch_url']) && !empty($site['sitesearch_parameter'])) {
-			$url = $site['main_url'];
-			if (substr($url, -1) != '/') {
-				$url .= '/';
-			}
-			$url .= $site['sitesearch_url'];
 			
-			$parameter = $site['sitesearch_parameter'];
+			// check whether action is a site search
+			$url = preg_quote($site['sitesearch_url'], '/');
+			$param = preg_quote($site['sitesearch_parameter'], '/');
+			$regex = '/'.$url.'(.*)(&|\?)'.$param.'=(.*?)(&|$)/i';
+			
 			$actionUrl = $action->getActionUrl();
 			
-			if (substr($actionUrl, 0, strlen($url)) == $url) {
+			if (preg_match($regex, $actionUrl, $matches)) {
 				require_once PIWIK_INCLUDE_PATH .'/plugins/SiteSearch/Archive.php';
 				require_once PIWIK_INCLUDE_PATH .'/plugins/SiteSearch/Db.php';
 				Piwik_SiteSearch_Archive::logAction(array(

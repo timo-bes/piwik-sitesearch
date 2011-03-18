@@ -3,4 +3,4 @@
 
 Version 0.1.6
 This version introduces tracker caching for higher tracking performance.
-After updating, you have to rebuild the tracker cache by saving the SiteSearch configuration in Piwik!
+After updating, you have to rebuild the tracker cache by saving the SiteSearch plugin configuration in Piwik again!

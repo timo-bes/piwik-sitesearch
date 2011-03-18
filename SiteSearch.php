@@ -173,7 +173,7 @@ class Piwik_SiteSearch extends Piwik_Plugin {
 		
 		// search results passed via JS tracker
 		$data = Piwik_Common::getRequestVar('data', '');
-		$data = html_entity_decode($data);
+		$data = Piwik_Common::unsanitizeInputValue($data);
 		$data = json_decode($data, true);
 		$resultCount = false;
 		if (isset($data['SiteSearch_Results'])) {

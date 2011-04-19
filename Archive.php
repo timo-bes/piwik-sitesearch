@@ -96,7 +96,7 @@ class Piwik_SiteSearch_Archive {
 		if ($numeric) {
 			// numeric archives are only used for search evolution
 			$dataTable = $archive->getDataTableFromNumeric($name);
-			$dataTable->queueFilter('ReplaceColumnNames', array(false, array(
+			$dataTable->queueFilter('ReplaceColumnNames', array(array(
 				'SiteSearch_totalSearches' => self::HITS,
 				'SiteSearch_visitsWithSearches' => self::UNIQUE_HITS
 			)));

@@ -88,9 +88,28 @@ class Piwik_SiteSearch extends Piwik_Plugin {
             'ArchiveProcessing_Day.compute' => 'archiveDay',
         	'ArchiveProcessing_Period.compute' => 'archivePeriod',
         	'Common.fetchWebsiteAttributes' => 'recordWebsiteDataInCache',
+        	'API.getReportMetadata' => 'getReportMetadata'
         );
         return $hooks;
     }
+    
+	/** The report metadata allows Piwik Mobile to discover the plugin */
+    public function getReportMetadata($notification) {
+		$reports = &$notification->getNotificationObject();
+		
+		$metrics = array('unique_hits' => Piwik_Translate('SiteSearch_UniqueHits'));
+		
+		$reports[] = array(
+			'category' => Piwik_Translate('Actions_Actions'),
+			'name' => Piwik_Translate('SiteSearch_SiteSearch'),
+			'module' => 'SiteSearch',
+			'action' => 'getPiwikMobileReport',
+			'dimension' => Piwik_Translate('SiteSearch_Keyword'),
+			'metrics' => $metrics,
+			'processedMetrics' => false,
+			'order' => 50
+		);
+	}
     
     /** Add SiteSearch config to tracker cache */
     public function recordWebsiteDataInCache($notification) {

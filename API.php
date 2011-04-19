@@ -77,7 +77,7 @@ class Piwik_SiteSearch_API {
 			// data is taken from general keyword blob archive
 			$dataTable = Piwik_SiteSearch_Archive::getDataTable(
 					'keywords', $idSite, $period, $date);
-			$dataTable->queueFilter('ReplaceColumnNames', array(false, array(
+			$dataTable->queueFilter('ReplaceColumnNames', array(array(
 					'label' => 'label_hidden')));
 			$this->filterDataTable($dataTable, $idSearch);
 		}
@@ -166,6 +166,24 @@ class Piwik_SiteSearch_API {
 		}
 		
 		$this->filterDataTable($dataTable, $idSearch);
+		return $dataTable;
+	}
+	
+	/** This method is used for accessing the Piwik Mobile report */
+	public function getPiwikMobileReport($idSite, $period, $date, $segment=false, $columns=false) {
+		Piwik::checkUserHasViewAccess($idSite);
+		
+		$dataTable = $this->getSearchKeywords($idSite, $period, $date);
+		
+		$dataTable->queueFilter('ReplaceColumnNames', array(array(
+				Piwik_SiteSearch_Archive::UNIQUE_HITS => 'unique_hits',
+				'label' => 'label_old',
+				Piwik_SiteSearch_Archive::SEARCH_TERM => 'label')));
+		
+		$dataTable->applyQueuedFilters();
+		
+		$dataTable->filter('Sort', array('unique_hits', 'desc'));
+		
 		return $dataTable;
 	}
 	

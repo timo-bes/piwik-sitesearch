@@ -31,7 +31,9 @@ class Piwik_SiteSearch_Controller extends Piwik_Controller {
 		$view->keywords = $this->keywords(true);
 		$view->noResults = $this->noResults(true);
 		$view->searchPercentage = $this->searchPercentage(true);
-		$view->period = $this->range->getLocalizedLongString();
+		if (isset($this->date)) {
+			$view->period = $this->range->getLocalizedLongString();
+		}
 		echo $view->render();
 	}
 	

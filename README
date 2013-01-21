@@ -1,4 +1,12 @@
 
+THIS PLUGIN IS DEPRECATED!
+
+It was written before the Piwik Core included functionality to track the internal site search.
+Now it does, so please use the Core solution.
+
+
+---
+
 !IMPORTANT! RELEASE NOTES
 
 Version 0.1.6
